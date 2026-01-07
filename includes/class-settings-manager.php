@@ -58,6 +58,14 @@ class Settings_Manager {
 	}
 
 	/**
+	 * Get hidden shipping methods from settings.
+	 */
+	public function get_hidden_shipping_methods(): array {
+		$settings = $this->get_plugin_settings();
+		return $settings['hidden_methods'] ?? [];
+	}
+
+	/**
 	 * Get a specific translation or return the default.
 	 */
 	public function get_translation( string $key, string $default = '' ): string {

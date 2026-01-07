@@ -23,45 +23,167 @@ class Checkout_Handler {
 	}
 
 	private function __construct() {
-		add_action( 'woocommerce_review_order_after_shipping', [ $this, 'display_date_selector' ] );
+		add_filter( 'woocommerce_checkout_fields', [ $this, 'add_shipping_date_field' ] );
+		add_filter( 'woocommerce_form_field_ass_custom', [ $this, 'render_custom_field' ], 10, 4 );
 		add_action( 'woocommerce_checkout_process', [ $this, 'validate_date_selection' ] );
+		add_filter( 'woocommerce_update_order_review_fragments', [ $this, 'update_checkout_fragments' ], 10, 1 );
+		add_action( 'woocommerce_review_order_before_order_total', [ $this, 'display_order_review_content' ], 5 );
 	}
 
 	/**
-	 * Display the date selector or ASAP label.
+	 * Get display location setting.
 	 */
-	public function display_date_selector(): void {
+	private function get_display_location(): string {
+		$settings = Settings_Manager::instance()->get_plugin_settings();
+		$location = $settings['display_location'] ?? 'billing';
+		$allowed_locations = [ 'billing', 'shipping', 'order_review' ];
+		return in_array( $location, $allowed_locations, true ) ? $location : 'billing';
+	}
+
+	/**
+	 * Add custom shipping date field to checkout fields.
+	 */
+	public function add_shipping_date_field( array $fields ): array {
+		$display_location = $this->get_display_location();
+		
+		// Only add to billing or shipping fields, not order_review
+		if ( 'order_review' === $display_location ) {
+			return $fields;
+		}
+
+		$field_key = 'ass_shipping_date';
+		$section = $display_location; // 'billing' or 'shipping'
+		
+		$fields[ $section ][ $field_key ] = [
+			'type'        => 'ass_custom',
+			'label'       => '',
+			'required'    => false,
+			'priority'    => 5, // Before name field (priority 10)
+			'class'       => [ 'form-row-wide', 'ass-shipping-date-field' ],
+		];
+		
+		return $fields;
+	}
+
+	/**
+	 * Display content in order review section.
+	 */
+	public function display_order_review_content(): void {
+		$display_location = $this->get_display_location();
+		if ( 'order_review' !== $display_location ) {
+			return;
+		}
+
+		$content = $this->get_shipping_date_content();
+		if ( empty( $content ) ) {
+			return;
+		}
+
+		$allowed_html = wp_kses_allowed_html( 'post' );
+		$allowed_html['input'] = [
+			'type' => true,
+			'name' => true,
+			'value' => true,
+			'required' => true,
+			'class' => true,
+			'id' => true,
+		];
+		$allowed_html['label'] = [
+			'class' => true,
+			'for' => true,
+		];
+
+		echo '<div class="ass-checkout-order-review-wrapper">' . wp_kses( $content, $allowed_html ) . '</div>';
+	}
+
+	/**
+	 * Get the shipping date content HTML.
+	 */
+	private function get_shipping_date_content(): string {
 		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
 		if ( empty( $chosen_methods ) ) {
-			return;
+			return '';
 		}
 
 		$chosen_method = $chosen_methods[0];
-		$rules         = Settings_Manager::instance()->get_shipping_rules();
+		
+		$packages = WC()->shipping()->get_packages();
+		if ( empty( $packages ) ) {
+			return '';
+		}
 
-		// Extract method_id from chosen method (WPFactory pattern)
-		$method_id = $this->get_method_id_from_rate_key( $chosen_method );
-		$rule      = $rules[ $method_id ] ?? null;
+		$rate = null;
+		$package = null;
+		foreach ( $packages as $pkg ) {
+			if ( ! empty( $pkg['rates'][ $chosen_method ] ) ) {
+				$rate = $pkg['rates'][ $chosen_method ];
+				$package = $pkg;
+				break;
+			}
+		}
+
+		if ( ! $rate || ! $package ) {
+			return '';
+		}
+
+		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
+		$rules = Settings_Manager::instance()->get_shipping_rules();
+		$rule = $rules[ $method_id ] ?? null;
 
 		if ( ! $rule ) {
-			return;
+			return '';
 		}
 
-		echo '<div class="ass-checkout-shipping-info">';
+		$shipping_filter = Shipping_Filter::instance();
+		$validation = $shipping_filter->validate_shipping_method( $rate, $package );
+
+		if ( ! $validation['res'] ) {
+			return '';
+		}
+
+		// Build field HTML
+		$field_html = '<div class="ass-checkout-shipping-info">';
 
 		if ( 'asap' === $rule['type'] ) {
-			$this->render_asap_info( $rule );
+			$field_html .= $this->render_asap_info_html( $rule );
 		} elseif ( 'by_date' === $rule['type'] ) {
-			$this->render_date_selector( $rule );
+			$field_html .= $this->render_date_selector_html( $rule );
 		}
 
-		echo '</div>';
+		$field_html .= '</div>';
+
+		return $field_html;
 	}
 
 	/**
-	 * Render ASAP info label.
+	 * Render custom field content for ass_custom field type.
 	 */
-	private function render_asap_info( array $rule ): void {
+	public function render_custom_field( $field, $key, $args, $value ) {
+		if ( 'ass_shipping_date' !== $key ) {
+			return $field;
+		}
+
+		$content = $this->get_shipping_date_content();
+		if ( empty( $content ) ) {
+			return '';
+		}
+
+		// Return the custom HTML wrapped in form field structure
+		$field_id = $args['id'] ?? $key;
+		$field_class = isset( $args['class'] ) ? implode( ' ', $args['class'] ) : '';
+
+		return sprintf(
+			'<p class="form-row %s" id="%s_field">%s</p>',
+			esc_attr( $field_class ),
+			esc_attr( $field_id ),
+			$content
+		);
+	}
+
+	/**
+	 * Render ASAP info label as HTML string.
+	 */
+	private function render_asap_info_html( array $rule ): string {
 		$sending_days  = $rule['sending_days'] ?? [];
 		$max_ship_days = $rule['max_ship_days'] ?? 0;
 		$holidays      = Settings_Manager::instance()->get_holiday_dates();
@@ -69,43 +191,46 @@ class Checkout_Handler {
 		$asap_date = Date_Calculator::instance()->calculate_asap_date( $sending_days, $max_ship_days, $holidays );
 		
 		if ( ! $asap_date ) {
-			return;
+			return '';
 		}
 
-		$prefix = Settings_Manager::instance()->get_translation( 'asap_prefix', 'Pristatymas ne vėliau kaip' );
+		$prefix = Settings_Manager::instance()->get_translation( 'asap_prefix', 'Delivery no later than' );
 		$formatted_date = $this->format_asap_date( $asap_date );
 
-		echo '<p class="ass-asap-date-info">' . esc_html( $prefix ) . ' <strong>' . esc_html( $formatted_date ) . '</strong></p>';
+		$html = '<p class="ass-asap-date-info">' . esc_html( $prefix ) . ' <strong>' . esc_html( $formatted_date ) . '</strong></p>';
 		// We'll use this hidden field to pass the calculated date to the order creation.
-		echo '<input type="hidden" name="ass_calculated_asap_date" value="' . esc_attr( $asap_date ) . '">';
+		$html .= '<input type="hidden" name="ass_calculated_asap_date" value="' . esc_attr( $asap_date ) . '">';
+		
+		return $html;
 	}
 
 	/**
-	 * Render reservation date selector.
+	 * Render reservation date selector as HTML string.
 	 */
-	private function render_date_selector( array $rule ): void {
+	private function render_date_selector_html( array $rule ): string {
 		$available_dates = $this->get_available_dates_for_cart( $rule );
 		if ( empty( $available_dates ) ) {
-			echo '<p class="ass-no-dates-error">' . esc_html__( 'No available dates for selected items.', 'advanced-shipping-settings' ) . '</p>';
-			return;
+			return '<p class="ass-no-dates-error">' . esc_html__( 'No available dates for selected items.', 'advanced-shipping-settings' ) . '</p>';
 		}
 
 		$prompt = Settings_Manager::instance()->get_translation( 'reservation_prompt', 'Select a reservation date:' );
 
-		echo '<p class="ass-reservation-prompt"><strong>' . esc_html( $prompt ) . '</strong></p>';
-		echo '<div class="ass-date-options">';
+		$html = '<p class="ass-reservation-prompt"><strong>' . esc_html( $prompt ) . '</strong></p>';
+		$html .= '<div class="ass-date-options">';
 
 		foreach ( $available_dates as $date_info ) {
 			$date  = $date_info['date'];
 			$label = $date_info['label'];
 
-			echo '<label class="ass-date-option">';
-			echo '<input type="radio" name="reservation_date" value="' . esc_attr( $date ) . '" required> ';
-			echo esc_html( $label );
-			echo '</label><br>';
+			$html .= '<label class="ass-date-option">';
+			$html .= '<input type="radio" name="reservation_date" value="' . esc_attr( $date ) . '" required> ';
+			$html .= esc_html( $label );
+			$html .= '</label><br>';
 		}
 
-		echo '</div>';
+		$html .= '</div>';
+		
+		return $html;
 	}
 
 	/**
@@ -147,15 +272,6 @@ class Checkout_Handler {
 	}
 
 	/**
-	 * Extract method_id from WooCommerce rate key.
-	 * Rate keys are in format "method_id:instance_id" (e.g., "flat_rate:5").
-	 */
-	private function get_method_id_from_rate_key( string $rate_key ): string {
-		$parts = explode( ':', $rate_key, 2 );
-		return $parts[0];
-	}
-
-	/**
 	 * Validate date selection during checkout.
 	 */
 	public function validate_date_selection(): void {
@@ -165,18 +281,43 @@ class Checkout_Handler {
 		}
 
 		$chosen_method = $chosen_methods[0];
-		$rules         = Settings_Manager::instance()->get_shipping_rules();
+		
+		$packages = WC()->shipping()->get_packages();
+		if ( empty( $packages ) ) {
+			return;
+		}
 
-		// Extract method_id from chosen method
-		$method_id = $this->get_method_id_from_rate_key( $chosen_method );
-		$rule      = $rules[ $method_id ] ?? null;
+		$rate = null;
+		$package = null;
+		foreach ( $packages as $pkg ) {
+			if ( ! empty( $pkg['rates'][ $chosen_method ] ) ) {
+				$rate = $pkg['rates'][ $chosen_method ];
+				$package = $pkg;
+				break;
+			}
+		}
+
+		if ( ! $rate || ! $package ) {
+			return;
+		}
+
+		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
+		$rules = Settings_Manager::instance()->get_shipping_rules();
+		$rule = $rules[ $method_id ] ?? null;
 
 		if ( ! $rule || 'by_date' !== $rule['type'] ) {
 			return;
 		}
 
+		$shipping_filter = Shipping_Filter::instance();
+		$validation = $shipping_filter->validate_shipping_method( $rate, $package );
+
+		if ( ! $validation['res'] ) {
+			return;
+		}
+
 		if ( empty( $_POST['reservation_date'] ) ) {
-			$error_msg = Settings_Manager::instance()->get_translation( 'error_date_required', 'Prašome pasirinkti rezervacijos datą.' );
+			$error_msg = Settings_Manager::instance()->get_translation( 'error_date_required', 'Please select a reservation date.' );
 			wc_add_notice( $error_msg, 'error' );
 		} else {
 			$selected_date = sanitize_text_field( wp_unslash( $_POST['reservation_date'] ) );
@@ -195,7 +336,7 @@ class Checkout_Handler {
 	}
 
 	/**
-	 * Format ASAP date for Lithuanian display.
+	 * Format ASAP date for display.
 	 */
 	public function format_asap_date( string $date_str ): string {
 		$date = DateTime::createFromFormat( 'Y-m-d', $date_str );
@@ -203,18 +344,63 @@ class Checkout_Handler {
 			return $date_str;
 		}
 
+		$settings = Settings_Manager::instance();
 		$days = [
-			1 => 'pirmadienis',
-			2 => 'antradienis',
-			3 => 'trečiadienis',
-			4 => 'ketvirtadienis',
-			5 => 'penktadienis',
-			6 => 'šeštadienis',
-			7 => 'sekmadienis',
+			1 => $settings->get_translation( 'day_monday', 'Monday' ),
+			2 => $settings->get_translation( 'day_tuesday', 'Tuesday' ),
+			3 => $settings->get_translation( 'day_wednesday', 'Wednesday' ),
+			4 => $settings->get_translation( 'day_thursday', 'Thursday' ),
+			5 => $settings->get_translation( 'day_friday', 'Friday' ),
+			6 => $settings->get_translation( 'day_saturday', 'Saturday' ),
+			7 => $settings->get_translation( 'day_sunday', 'Sunday' ),
 		];
 
 		$day_name = $days[ (int) $date->format( 'N' ) ];
 		return $day_name . ', ' . $date_str;
+	}
+
+	public function update_checkout_fragments( array $fragments ): array {
+		$display_location = $this->get_display_location();
+		
+		if ( 'billing' === $display_location ) {
+			ob_start();
+			?>
+			<div class="woocommerce-billing-fields__field-wrapper">
+					<?php
+					$checkout = WC()->checkout();
+					$fields = $checkout->get_checkout_fields('billing');
+					foreach ($fields as $key => $field) {
+						woocommerce_form_field($key, $field, $checkout->get_value($key));
+					}
+					?>
+			</div>
+			<?php
+			$fragments['.woocommerce-billing-fields__field-wrapper'] = ob_get_clean();
+		} elseif ( 'shipping' === $display_location ) {
+			ob_start();
+			?>
+			<div class="woocommerce-shipping-fields__field-wrapper">
+					<?php
+					$checkout = WC()->checkout();
+					$fields = $checkout->get_checkout_fields('shipping');
+					foreach ($fields as $key => $field) {
+						woocommerce_form_field($key, $field, $checkout->get_value($key));
+					}
+					?>
+			</div>
+			<?php
+			$fragments['.woocommerce-shipping-fields__field-wrapper'] = ob_get_clean();
+		} elseif ( 'order_review' === $display_location ) {
+			ob_start();
+			?>
+			<div class="woocommerce-checkout-review-order">
+				<?php woocommerce_order_review(); ?>
+			</div>
+			<?php
+			$fragments['.woocommerce-checkout-review-order'] = ob_get_clean();
+		}
+		
+		return $fragments;
 	}
 }
 

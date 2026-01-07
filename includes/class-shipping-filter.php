@@ -33,23 +33,13 @@ class Shipping_Filter {
 			return $rates;
 		}
 
-		$unset = [];
 		foreach ( $rates as $rate_key => $rate ) {
 			$validation = $this->validate_shipping_method( $rate, $package );
 
 			if ( ! $validation['res'] ) {
-				$unset[ $rate_key ] = [
-					'rate' => $rate,
-					'hide_reason' => $validation['hide_reason']
-				];
 				unset( $rates[ $rate_key ] );
 			}
 		}
-
-		// Store hidden methods in session for notices
-		$session_data = WC()->session->get( 'ass_shipping_data', [] );
-		$session_data['unset'] = $unset;
-		WC()->session->set( 'ass_shipping_data', $session_data );
 
 		return $rates;
 	}

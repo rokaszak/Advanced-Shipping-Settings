@@ -32,15 +32,6 @@ class Hooks {
 
 		// Invalidate shipping cache when needed
 		add_action( 'init', [ $this, 'maybe_invalidate_stored_shipping_rates' ] );
-
-		// Notices for hidden shipping methods
-		$notice_hooks = apply_filters( 'ass_shipping_notice_hooks', [
-			'woocommerce_before_cart',
-			'woocommerce_before_checkout_form',
-		] );
-		foreach ( $notice_hooks as $notice_hook ) {
-			add_action( $notice_hook, [ $this, 'notices' ], 9 );
-		}
 	}
 
 	/**
@@ -86,29 +77,6 @@ class Hooks {
 				);
 				$message = str_replace( '%shipping_method%', $rate->get_label(), $message );
 				wc_add_notice( $message, 'error' );
-			}
-		}
-	}
-
-	/**
-	 * Display notices about hidden shipping methods.
-	 */
-	public function notices(): void {
-		$session_data = WC()->session->get( 'ass_shipping_data', [] );
-
-		if ( ! empty( $session_data['unset'] ) ) {
-			foreach ( $session_data['unset'] as $rate_key => $rate_data ) {
-				if ( empty( $rate_data['rate'] ) || empty( $rate_data['hide_reason'] ) ) {
-					continue;
-				}
-
-				$message = apply_filters( 'ass_hidden_shipping_notice',
-					__( '%shipping_method% is not available.', 'advanced-shipping-settings' ),
-					$rate_data['rate'], $rate_data['hide_reason']
-				);
-				$message = str_replace( '%shipping_method%', $rate_data['rate']->get_label(), $message );
-
-				wc_add_notice( $message, 'notice' );
 			}
 		}
 	}

@@ -115,7 +115,7 @@ class Shortcode_Handler {
 			return;
 		}
 
-		$prefix = Settings_Manager::instance()->get_translation( 'asap_prefix', 'Pristatymas ne vėliau kaip' );
+		$prefix = Settings_Manager::instance()->get_translation( 'asap_prefix', 'Delivery no later than' );
 		$formatted_date = Checkout_Handler::instance()->format_asap_date( $asap_date );
 
 		echo '<div class="ass-asap-date">' . esc_html( $prefix ) . ' ' . esc_html( $formatted_date ) . '</div>';
@@ -142,7 +142,7 @@ class Shortcode_Handler {
 			return;
 		}
 
-		$label = Settings_Manager::instance()->get_translation( 'shortcode_rezervuoti', 'Rezervuoti galite:' );
+		$label = Settings_Manager::instance()->get_translation( 'shortcode_rezervuoti', 'Available to reserve:' );
 		echo '<div class="ass-method-dates">';
 		echo '<div class="ass-date-label">' . esc_html( $label ) . '</div>';
 		foreach ( $available_dates as $date_info ) {

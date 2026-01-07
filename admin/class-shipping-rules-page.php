@@ -114,7 +114,7 @@ class Shipping_Rules_Page {
 																</div>
 																<div class="ass-input-group">
 																	<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-																	<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][label]" value="<?php echo esc_attr( $date_info['label'] ); ?>" placeholder="e.g. Sausio 9 d.">
+																	<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][label]" value="<?php echo esc_attr( $date_info['label'] ); ?>" placeholder="e.g. January 9">
 																</div>
 																<div class="ass-input-group">
 																	<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional: Hide this date as soon as this date is reached.', 'advanced-shipping-settings' ) ); ?></label>
@@ -182,7 +182,7 @@ class Shipping_Rules_Page {
 					</div>
 					<div class="ass-input-group">
 						<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-						<input type="text" name="rules[{method_id}][dates][{index}][label]" placeholder="e.g. Sausio 9 d.">
+						<input type="text" name="rules[{method_id}][dates][{index}][label]" placeholder="e.g. January 9">
 					</div>
 					<div class="ass-input-group">
 						<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional: Hide this date as soon as this date is reached.', 'advanced-shipping-settings' ) ); ?></label>
@@ -203,6 +203,7 @@ class Shipping_Rules_Page {
 	/**
 	 * Get all WooCommerce shipping method types (WPFactory pattern).
 	 * Uses WC()->shipping()->load_shipping_methods() and stores by method_id only.
+	 * Filters out hidden methods.
 	 */
 	private function get_available_shipping_methods(): array {
 		$methods = [];
@@ -223,6 +224,12 @@ class Shipping_Rules_Page {
 				'title' => $method_class->get_method_title(),
 				'id'    => $method_id,
 			];
+		}
+
+		// Filter out hidden methods
+		$hidden_methods = Settings_Manager::instance()->get_hidden_shipping_methods();
+		if ( ! empty( $hidden_methods ) ) {
+			$methods = array_diff_key( $methods, array_flip( $hidden_methods ) );
 		}
 
 		return $methods;

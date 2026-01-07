@@ -4,20 +4,9 @@ jQuery(document).ready(function($) {
      */
 
     // WooCommerce triggers 'updated_checkout' when shipping methods change.
+    // Note: No default selection - user must explicitly select a reservation date.
     $(document.body).on('updated_checkout', function() {
-        // If there are reservation dates and none is selected, select the first one.
-        var $dates = $('input[name="reservation_date"]');
-        if ($dates.length > 0 && !$dates.is(':checked')) {
-            $dates.first().prop('checked', true);
-        }
-    });
-
-    // Ensure selection is preserved if checkout fragments update.
-    $(document.body).on('checkout_error', function() {
-        var $dates = $('input[name="reservation_date"]');
-        if ($dates.length > 0 && !$dates.is(':checked')) {
-             // Maybe user tried to submit without selection (though required attribute should catch it).
-        }
+        // Selection preservation logic can be added here if needed in the future
     });
 });
 
