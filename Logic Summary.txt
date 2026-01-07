@@ -1,0 +1,48 @@
+Complete Logic Summary:
+Settings Structure:
+
+One admin menu item with two sub-pages: "Shipping Rules" and "Plugin Settings"
+Shipping Rules: drag-and-drop UI for configuring ASAP/BY DATE methods with categories
+Plugin Settings: translations for frontend strings, holiday dates repeater field
+All admin inputs have tooltip help icons (woocommerce-help-tip style)
+
+Category Assignment:
+
+Categories can appear in multiple shipping methods
+Drag-and-drop from sidebar, can only drop once per date/method (no duplicates)
+Products with no categories are excluded from all methods
+Products with multiple categories need only ONE to match
+
+ASAP Logic:
+
+Nearest upcoming sending day calculation
+Switches to next occurrence at midnight (WordPress time)
+Max ship time counts only working days (Mo-Fr, excluding holidays)
+Displays calculated delivery date as label only
+
+BY DATE Logic:
+
+Chronologically sorted dates
+Hidden when reached (at midnight WordPress time)
+Optional "show until" date for early hiding
+User must select from available dates (required field)
+Only dates where ALL cart categories intersect are shown
+
+Cart Filtering:
+
+AND logic: only methods where ALL cart categories are included
+No shared methods = no available shipping methods
+
+Order Meta:
+
+asap_date or reservation_date stored in ISO format (2026-01-14)
+
+Shortcode:
+
+Uses global $product, no attributes needed
+Follows same visibility logic as checkout
+
+Frontend:
+
+All client-facing strings translatable in settings
+Default English, customizable in admin

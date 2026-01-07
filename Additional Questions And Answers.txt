@@ -1,0 +1,78 @@
+Settings Page (Image 1):
+
+Q. Category Assignment UI: I see categories like "Dubajaus Šokoladas" and "Macarons" listed under each shipping method/date. Is this a drag-and-drop interface where admin drags categories from a sidebar (shown on right) into the shipping method boxes? Or a different selection mechanism?
+Multiple Dates per Shipping Method: For BY DATE methods (like "SIUNTOS AUTOBUSAIS" and "Vietoje"), can they have unlimited dates, or is there a practical limit? Can dates be added/removed dynamically?
+Date Ordering: Should dates in BY DATE methods automatically be sorted chronologically, or does admin control the order?
+Past Dates: What happens to past dates? Should they be automatically hidden/archived, or does admin manually remove them?
+
+A. Yes its a drag and drop interface. The sidebar displays all available categories. A user may only drop the category once into a single reservation date or asap shipping method (Logical, basically ensuring clarity that if the category is already there you cant drop it in there again).
+Practically unlimited, probably never more then 20 dates. Yes dates are basically a repeater field so they should be easily added removed.
+Date ordering should be sorted chronologically.
+Each date should have a shown until setting (ISO date). Its not required. If not entered the date is hidden as soon its reached. For example if the wordpress time is 2026-01-10 the users can see the 2026-01-11 reservation date, but as soon as wordpress time is 2026-01-11, that reservation date should not be shown to frontend users. From the settings page it can be manually cleaned, no cron jobs are required in this plugin. If a "show until" date is set, for example 2026-01-09 , then  as soon as wordpress time is 2026-01-09 the date is no longer shown. The shown until setting is not a replacement for the base logic, its more of an early "return". For example if the reservation date is 2026-01-11 but the "show until" date is 2026-01-13 , the date will still be hidden at 2026-01-11 .
+
+ASAP Calculation Logic:
+
+Q. Sending Day Timing: If today is Wednesday (like 2026-01-07) and the sending day is Thursday, does the calculation assume the package will be sent THIS Thursday (tomorrow, 01-08), or does it look for the NEXT occurrence of that weekday if it's too late in the day?
+Multiple Sending Days: If ASAP method has multiple sending days selected (e.g., both Thursday AND Friday), does it always use the NEAREST upcoming sending day for calculation?
+National Holidays: You mentioned "removing national lithuanian holiday days" from working days calculation. Should the plugin have a configurable list of Lithuanian holidays, or does it need integration with an external holiday API?
+A. Yes the calculation assumes the package will be sent this thursday. It flips to next occurence when its actually that day. For example if today is thursday, it will calculate for the NEXT occurence. Just like the reservation dates the switch time is wp server time, exactly at midnight. So while orders at wednesday 23:59 are valid to be sent this thursday, orders at thursday 00:01 are only valid for next thursday
+Yes it always use the NEAREST upcoming sending day for calculation
+The plugin have a configurable list of "holiday dates", which is simply a repeater field of iso dates, like if 2025-12-24 is a wednesday and would be used a valid shipping day, if its added to the repeater of "holiday dates" in settings it becomes a holiday day and doesnt count. It should be accompanied with a label so admins can write down why this day is a non working day to avoid confusion.
+
+Cart/Checkout Filtering:
+
+Q. Empty Category Products: What happens if a product has NO category assigned? Is it excluded from all shipping methods, or does it match all methods?
+Multiple Categories per Product: If a single product belongs to multiple categories (e.g., both "Dubajaus Šokoladas" AND "Macarons"), does it need ALL its categories to be included in a shipping method, or just ONE?
+BY DATE Intersection: In Image 2, cart has "Dubajaus Šokoladas" and "Macarons" categories. "SIUNTOS AUTOBUSAIS" is shown as available with dates "Sausio 9 d." and "Sausio 16 d." This means both dates have BOTH categories assigned in settings, correct? The date selection only shows dates where ALL cart categories intersect?
+A. if a product has NO category assigned it is excluded from all shipping methods
+if a single product belongs to multiple categories (e.g., both "Dubajaus Šokoladas" AND "Macarons"), it needs just ONE of its categories to be included in a shipping method
+cart has "Dubajaus Šokoladas" and "Macarons" categories. "SIUNTOS AUTOBUSAIS" is shown as available with dates "Sausio 9 d." and "Sausio 16 d." This means both dates have BOTH categories assigned in settings.
+
+Product Page Shortcode (Images 5-6):
+
+Q. Shortcode Date Filtering: Should the shortcode only show FUTURE dates (relative to current date), or all configured dates including past ones?
+ASAP Display on Product Page: For ASAP methods on product pages, should it calculate and show the delivery date based on TODAY's date dynamically, or is there a different approach?
+A. It should follow exactly same logic that is used in the checkout, please see Settings Page answer to question 4.
+It should follow exactly same logic that is used in the checkout, please see ASAP Calculation Logic answers. 
+
+
+
+EXTRA: Another thing to note is to add a question mark icon white in a grey circle background in anywhere where an admin has to write anything which has a tooltip like woocommerce does woocommerce-help-tip . Its just a very simple UX element that helps admins quicker understand the system and use it.
+Lastly to note out of the general things is that the whole plugin by default is in english, however any frontend client text must be available to set translations in the settings page. (The plugin has two pages, one where you setup the rules another where you can set translations, holiday days.)
+
+
+Final Logic Clarifications:
+
+Q. Category Uniqueness Across Methods: Can the same category appear in multiple different shipping methods? For example, can "Dubajaus Šokoladas" be assigned to BOTH "SIUNTOS AUTOBUSAIS" (BY DATE) AND "omniva" (ASAP)? Or is a category locked to only one shipping method once assigned?
+A. Yes the same category appear in multiple different shipping methods
+
+Q. Mixed ASAP and BY DATE in Cart: What happens if cart contains categories where some only exist in ASAP methods and others only in BY DATE methods? For example:
+
+Product A (Category X) → only in ASAP method "omniva"
+Product B (Category Y) → only in BY DATE method "SIUNTOS AUTOBUSAIS"
+
+Since they don't share ANY common shipping method, would NO shipping methods be available? (Following the AND logic)
+A. Since they don't share ANY common shipping method, NO shipping methods be available
+
+Q. Checkout Date Selection Validation: When user selects a reservation date in checkout, is this selection REQUIRED before they can complete the order? Or can they proceed without selecting if they somehow bypass the UI?
+A. Yes reservation date selection is REQUIRED before they can complete the order
+Q. Order Meta Storage: You mentioned saving asap_date or reservation_date to order meta. Should this be stored in a specific format (ISO date like 2026-01-14), or the formatted Lithuanian text (like "trečiadienis, 2026-01-14")?
+A. specific format ISO date: 2026-01-14
+Q. Shortcode Attribute: Will the shortcode need any attributes, or does it automatically detect the current product's categories? For example: [advanced_shipping_info] or [advanced_shipping_info product_id="123"]?
+A. The shortcode would look at the callback of the current product context, it can use global $product without any attributes.
+Q. Settings Page Structure: You mentioned "two pages" - one for rules, one for translations/holidays. Should these be:
+
+Two separate admin menu items?
+One menu item with tabs?
+One main page with a sub-page?
+
+A. One menu item with sub pages. One page is the plugins shipping rules, the other is actual plugin settings
+
+Q. Translation Fields: For translations settings page, which exact texts need to be translatable? I'm assuming:
+
+"Select a reservation date:" text
+"Pristatymas ne vėliau kaip" prefix for ASAP dates
+"Rezervuoti galite:" text for shortcode
+Any others?
+A. For now I can't think of any, but the plan should note that any frontend client facing strings should be translatable in plugin settings.
+

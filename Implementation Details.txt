@@ -1,0 +1,773 @@
+# Advanced Shipping Settings Plugin - Detailed Implementation Plan
+
+## 1. Plugin File Structure
+```
+advanced-shipping-settings/
+├── advanced-shipping-settings.php          (Main plugin file)
+├── includes/
+│   ├── class-plugin-core.php              (Core initialization)
+│   ├── class-settings-manager.php         (Settings storage/retrieval)
+│   ├── class-date-calculator.php          (ASAP date calculation logic)
+│   ├── class-shipping-filter.php          (Cart/checkout shipping filtering)
+│   ├── class-checkout-handler.php         (Checkout date selection UI)
+│   ├── class-order-meta-handler.php       (Order meta storage - HPOS compatible)
+│   └── class-shortcode-handler.php        (Product page shortcode)
+├── admin/
+│   ├── class-admin-menu.php               (Admin menu registration)
+│   ├── class-shipping-rules-page.php      (Shipping rules admin page)
+│   ├── class-plugin-settings-page.php     (Plugin settings admin page)
+│   ├── js/
+│   │   └── shipping-rules-admin.js        (Drag-and-drop functionality)
+│   └── css/
+│       └── admin-styles.css               (Admin styling)
+├── assets/
+│   ├── js/
+│   │   └── checkout-date-selector.js      (Frontend date selection)
+│   └── css/
+│       └── frontend-styles.css            (Frontend styling)
+└── languages/
+    └── advanced-shipping-settings.pot     (Translation template)
+```
+
+---
+
+## 2. Main Plugin File (advanced-shipping-settings.php)
+
+**Purpose:** Plugin header, initialization, dependency checks
+
+**Key Requirements:**
+- Check for WooCommerce active before initialization
+- Declare HPOS compatibility
+- Load text domain for translations
+- Initialize plugin core class
+
+**Code References:**
+- HPOS compatibility declaration: https://github.com/woocommerce/woocommerce/wiki/High-Performance-Order-Storage-Upgrade-Recipe-Book#declaring-hpos-compatibility
+- Plugin header standards: https://developer.wordpress.org/plugins/plugin-basics/header-requirements/
+
+**Hooks to Use:**
+```php
+add_action('plugins_loaded', 'initialize_plugin', 20); // After WooCommerce loads (priority 10)
+add_action('before_woocommerce_init', 'declare_hpos_compatibility');
+```
+
+**Implementation Notes:**
+- Use singleton pattern for main plugin class
+- Check `class_exists('WooCommerce')` before initialization
+- Display admin notice if WooCommerce not active
+
+---
+
+## 3. Core Classes
+
+### 3.1 class-plugin-core.php
+
+**Purpose:** Central initialization, dependency injection container
+
+**Responsibilities:**
+- Instantiate all other classes
+- Register hooks for admin and frontend
+- Provide access to settings manager
+
+**Hooks to Use:**
+```php
+add_action('init', 'register_shortcode');
+add_action('admin_enqueue_scripts', 'enqueue_admin_assets');
+add_action('wp_enqueue_scripts', 'enqueue_frontend_assets');
+```
+
+**Implementation Pattern:**
+- Singleton pattern
+- Lazy loading of class instances
+- Store instances in private properties
+
+---
+
+### 3.2 class-settings-manager.php
+
+**Purpose:** Handle all settings storage and retrieval
+
+**Storage Strategy:**
+- Use WordPress Options API for all settings
+- Store as serialized arrays for complex data structures
+- Option names:
+  - `ass_shipping_rules` (shipping methods configuration)
+  - `ass_plugin_settings` (translations, holidays)
+
+**Key Methods:**
+```php
+public function get_shipping_rules(): array
+public function save_shipping_rules(array $rules): bool
+public function get_plugin_settings(): array
+public function save_plugin_settings(array $settings): bool
+public function get_holiday_dates(): array
+public function get_translation(string $key): string
+```
+
+**Data Structure for Shipping Rules:**
+```php
+[
+    'method_id_123' => [
+        'type' => 'asap', // or 'by_date'
+        'sending_days' => [1, 4], // Mon=1, Thu=4
+        'max_ship_days' => 4,
+        'categories' => [15, 22, 33], // WC category term IDs
+    ],
+    'method_id_456' => [
+        'type' => 'by_date',
+        'dates' => [
+            [
+                'date' => '2026-01-09',
+                'label' => 'Sausio 9 d.',
+                'show_until' => '2026-01-08', // optional
+                'categories' => [15, 22],
+            ],
+        ],
+    ],
+]
+```
+
+**Documentation:**
+- Options API: https://developer.wordpress.org/apis/options/
+- Data sanitization: https://developer.wordpress.org/apis/security/sanitizing-securing-output/
+
+**Implementation Notes:**
+- Use `get_option()` with default values
+- Sanitize all inputs before storage
+- Use type hints for all parameters and return values
+
+---
+
+### 3.3 class-date-calculator.php
+
+**Purpose:** Calculate ASAP delivery dates with working day logic
+
+**Key Methods:**
+```php
+public function calculate_asap_date(
+    array $sending_days,
+    int $max_ship_days,
+    array $holiday_dates
+): string
+
+private function get_next_sending_day(array $sending_days, array $holidays): DateTime
+private function add_working_days(DateTime $start, int $days, array $holidays): DateTime
+private function is_working_day(DateTime $date, array $holidays): bool
+```
+
+**Algorithm Logic:**
+1. Get current WordPress time: `current_datetime()` (returns DateTimeImmutable)
+2. Find next sending day (if today is sending day and time >= 00:00, use next occurrence)
+3. Add max_ship_days counting only Mon-Fri excluding holidays
+4. Return ISO date string (Y-m-d format)
+
+**WordPress Functions:**
+- `current_datetime()`: https://developer.wordpress.org/reference/functions/current_datetime/
+- Timezone-aware dates: https://developer.wordpress.org/apis/datetime/
+
+**Implementation Notes:**
+- Use `DateTimeImmutable` for immutability
+- Sending days: 1=Monday, 2=Tuesday, ..., 7=Sunday
+- Holiday dates stored as 'Y-m-d' strings
+- All comparisons use midnight (00:00:00) time
+
+---
+
+### 3.4 class-shipping-filter.php
+
+**Purpose:** Filter available shipping methods based on cart categories
+
+**Key Method:**
+```php
+public function filter_shipping_methods(
+    array $rates,
+    array $package
+): array
+```
+
+**Hook to Use:**
+```php
+add_filter('woocommerce_package_rates', [$this, 'filter_shipping_methods'], 10, 2);
+```
+
+**Algorithm Logic:**
+1. Get all categories from cart items (WC product categories)
+2. Get shipping rules from settings manager
+3. For each shipping method in `$rates`:
+   - Check if method has rules configured
+   - For ASAP: verify ALL cart categories in method's category list
+   - For BY DATE: verify ALL cart categories exist in at least one visible date
+   - Remove method from `$rates` if conditions not met
+4. Return filtered `$rates` array
+
+**Helper Methods:**
+```php
+private function get_cart_categories(array $package): array
+private function method_supports_categories(string $method_id, array $categories): bool
+private function get_visible_dates_for_method(string $method_id): array
+private function all_categories_in_date(array $categories, array $date_categories): bool
+```
+
+**WooCommerce Documentation:**
+- Package rates filter: https://woocommerce.github.io/code-reference/hooks/woocommerce_package_rates.html
+- Get product categories: https://woocommerce.github.io/code-reference/classes/WC-Product.html#method_get_category_ids
+
+**Implementation Notes:**
+- Cart items accessible via `$package['contents']`
+- Each item has `$item['data']` (WC_Product object)
+- Use `$product->get_category_ids()` to get categories
+- Products with no categories should be excluded (empty array)
+- Use array_intersect for category matching
+- Must return complete `$rates` array (rate_id => WC_Shipping_Rate object)
+
+---
+
+### 3.5 class-checkout-handler.php
+
+**Purpose:** Display date selection UI at checkout for BY DATE methods
+
+**Hooks to Use:**
+```php
+add_action('woocommerce_review_order_after_shipping', [$this, 'display_date_selector']);
+add_action('woocommerce_checkout_process', [$this, 'validate_date_selection']);
+```
+
+**Key Methods:**
+```php
+public function display_date_selector(): void
+public function validate_date_selection(): void
+private function get_selected_method_type(): string
+private function get_available_dates_for_cart(): array
+```
+
+**Display Logic:**
+1. Detect chosen shipping method from session
+2. If method type is 'asap': display calculated date label only
+3. If method type is 'by_date': display radio buttons for date selection
+4. Get available dates (intersection of all cart category dates)
+5. Use translatable strings from plugin settings
+
+**Validation Logic:**
+1. Check if selected method is 'by_date' type
+2. Verify `$_POST['reservation_date']` is set and not empty
+3. Verify selected date exists in available dates list
+4. Use `wc_add_notice()` to display error if validation fails
+
+**WooCommerce Documentation:**
+- Checkout hooks: https://woocommerce.github.io/code-reference/hooks/hooks.html (search "checkout")
+- Add notices: https://woocommerce.github.io/code-reference/functions/wc_add_notice.html
+- Get chosen shipping methods: `WC()->session->get('chosen_shipping_methods')`
+
+**Implementation Notes:**
+- HTML should be minimal, semantic
+- Use native WooCommerce styling classes
+- Radio button name: `reservation_date`
+- Radio button value: ISO date (Y-m-d)
+- Display date labels from settings, not raw dates
+- AJAX refresh compatible (use proper hooks)
+
+---
+
+### 3.6 class-order-meta-handler.php
+
+**Purpose:** Save ASAP/reservation dates to order meta (HPOS compatible)
+
+**Hook to Use:**
+```php
+add_action('woocommerce_checkout_create_order', [$this, 'save_shipping_date_meta'], 10, 2);
+```
+
+**Key Method:**
+```php
+public function save_shipping_date_meta(WC_Order $order, array $data): void
+```
+
+**Logic:**
+1. Get chosen shipping method from checkout data
+2. Determine if method is ASAP or BY DATE
+3. For ASAP: calculate date and save to `asap_date` meta
+4. For BY DATE: get `$_POST['reservation_date']` and save to `reservation_date` meta
+5. Use HPOS-compatible meta storage
+
+**HPOS Meta Storage:**
+```php
+// HPOS compatible way (works for both HPOS and legacy)
+$order->update_meta_data('asap_date', $date_string);
+$order->update_meta_data('reservation_date', $date_string);
+$order->save(); // Important: persist changes
+```
+
+**Documentation:**
+- HPOS order meta: https://github.com/woocommerce/woocommerce/wiki/High-Performance-Order-Storage-Upgrade-Recipe-Book#working-with-orders
+- WC_Order methods: https://woocommerce.github.io/code-reference/classes/WC-Order.html
+
+**Implementation Notes:**
+- Never use `add_post_meta()` or `update_post_meta()` directly
+- Always use `$order->update_meta_data()` for HPOS compatibility
+- Date format: 'Y-m-d' (ISO 8601)
+- Meta keys: `asap_date` or `reservation_date` (never both)
+
+---
+
+### 3.7 class-shortcode-handler.php
+
+**Purpose:** Display available shipping methods and dates on product pages
+
+**Shortcode Registration:**
+```php
+add_shortcode('advanced_shipping_info', [$this, 'render_shortcode']);
+```
+
+**Key Method:**
+```php
+public function render_shortcode(array $atts): string
+```
+
+**Logic:**
+1. Access global `$product` to get current product
+2. Get product categories: `$product->get_category_ids()`
+3. Get all shipping rules from settings
+4. Filter methods where product categories match
+5. For each matching method:
+   - If ASAP: calculate and display delivery date
+   - If BY DATE: display available dates (respecting visibility rules)
+6. Return HTML string with method names and dates
+
+**Output Structure:**
+```html
+<div class="ass-shipping-info">
+    <div class="ass-method">
+        <div class="ass-method-name">SIUNTOS AUTOBUSAIS</div>
+        <div class="ass-method-dates">
+            <div class="ass-date-label">Rezervuoti galite:</div>
+            <div class="ass-date">Sausio 9 d.</div>
+            <div class="ass-date">Sausio 16 d.</div>
+        </div>
+    </div>
+    <div class="ass-method">
+        <div class="ass-method-name">omniva</div>
+        <div class="ass-asap-date">Pristatymas ne vėliau kaip antradienis, 2026-01-11</div>
+    </div>
+</div>
+```
+
+**Implementation Notes:**
+- Use output buffering: `ob_start()` / `ob_get_clean()`
+- Escape all output: `esc_html()`, `esc_attr()`
+- Follow same date visibility logic as checkout
+- Use translatable strings from settings
+- CSS class prefix: `ass-` (Advanced Shipping Settings)
+
+---
+
+## 4. Admin Pages
+
+### 4.1 class-admin-menu.php
+
+**Purpose:** Register admin menu and submenu pages
+
+**Hook to Use:**
+```php
+add_action('admin_menu', [$this, 'register_menu_pages']);
+```
+
+**Menu Structure:**
+```php
+add_menu_page(
+    'Advanced Shipping Settings',
+    'Shipping Settings',
+    'manage_woocommerce',
+    'advanced-shipping-settings',
+    'render_shipping_rules_page',
+    'dashicons-calendar-alt',
+    56 // After WooCommerce (55)
+);
+
+add_submenu_page(
+    'advanced-shipping-settings',
+    'Shipping Rules',
+    'Shipping Rules',
+    'manage_woocommerce',
+    'advanced-shipping-settings',
+    'render_shipping_rules_page'
+);
+
+add_submenu_page(
+    'advanced-shipping-settings',
+    'Plugin Settings',
+    'Plugin Settings',
+    'manage_woocommerce',
+    'advanced-shipping-settings-config',
+    'render_plugin_settings_page'
+);
+```
+
+**Documentation:**
+- Admin menus: https://developer.wordpress.org/reference/functions/add_menu_page/
+- Capabilities: https://wordpress.org/documentation/article/roles-and-capabilities/
+
+**Implementation Notes:**
+- Use `manage_woocommerce` capability (shop managers and above)
+- First submenu automatically replaces parent menu link
+- Dashicon reference: https://developer.wordpress.org/resource/dashicons/
+
+---
+
+### 4.2 class-shipping-rules-page.php
+
+**Purpose:** Admin page for configuring shipping method rules
+
+**Key Methods:**
+```php
+public function render(): void
+private function get_available_shipping_methods(): array
+private function get_all_product_categories(): array
+private function save_rules(): void
+```
+
+**Page Structure:**
+1. Load all active WooCommerce shipping methods
+2. For each method, display configuration panel:
+   - Radio buttons: ASAP / BY DATE
+   - If ASAP: checkboxes for sending days, number input for max ship days, category dropzone
+   - If BY DATE: repeater field for dates (date, label, show_until, category dropzone)
+3. Sidebar: list of all WooCommerce product categories (draggable)
+4. Save button (submits form via POST)
+
+**Getting Shipping Methods:**
+```php
+$shipping_zones = WC_Shipping_Zones::get_zones();
+// Iterate zones and extract methods
+// Also include "Rest of World" zone: WC_Shipping_Zones::get_zone(0)
+```
+
+**Getting Product Categories:**
+```php
+$categories = get_terms([
+    'taxonomy' => 'product_cat',
+    'hide_empty' => false,
+]);
+```
+
+**Form Handling:**
+```php
+// Verify nonce
+check_admin_referer('ass_save_rules', 'ass_rules_nonce');
+
+// Sanitize inputs
+$rules = []; // Build array from $_POST
+// Save via settings manager
+```
+
+**JavaScript Drag-and-Drop:**
+- Use native HTML5 drag-and-drop API
+- Library suggestion: Sortable.js (https://github.com/SortableJS/Sortable)
+- CDN link: https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js
+- Store category IDs in hidden inputs when dropped
+
+**WooCommerce Documentation:**
+- Shipping zones: https://woocommerce.github.io/code-reference/classes/WC-Shipping-Zones.html
+- Get terms: https://developer.wordpress.org/reference/functions/get_terms/
+
+**Implementation Notes:**
+- Use `wp_nonce_field()` for security
+- Settings API not ideal here due to complex UI
+- Use custom form with POST handling
+- Display admin notices after save: `add_settings_error()`
+- Add tooltip icons using `wc_help_tip()` function
+- Use WooCommerce admin CSS classes for consistent styling
+
+---
+
+### 4.3 class-plugin-settings-page.php
+
+**Purpose:** Settings for translations and holiday dates
+
+**Use Settings API:**
+```php
+add_action('admin_init', [$this, 'register_settings']);
+```
+
+**Settings Structure:**
+
+**Section 1: Translation Strings**
+- Setting ID: `ass_translations`
+- Fields: text inputs for each translatable string
+- Default values in English
+
+**Section 2: Holiday Dates**
+- Setting ID: `ass_holiday_dates`
+- Repeater field: date input + label text input
+- Add/Remove buttons for rows
+
+**Register Settings:**
+```php
+register_setting('ass_plugin_settings', 'ass_translations', [
+    'type' => 'array',
+    'sanitize_callback' => [$this, 'sanitize_translations'],
+]);
+
+register_setting('ass_plugin_settings', 'ass_holiday_dates', [
+    'type' => 'array',
+    'sanitize_callback' => [$this, 'sanitize_holiday_dates'],
+]);
+
+add_settings_section('ass_translations_section', ...);
+add_settings_field('translation_reservation_date', ...);
+// etc.
+```
+
+**Repeater Field Implementation:**
+- Use JavaScript to add/remove rows dynamically
+- Store as array in single option
+- Each row: `['date' => '2025-12-24', 'label' => 'Christmas Eve']`
+
+**JavaScript for Repeater:**
+```javascript
+// Add row: clone template, append to container
+// Remove row: remove DOM element
+// On save: WordPress handles array serialization automatically
+```
+
+**Documentation:**
+- Settings API: https://developer.wordpress.org/plugins/settings/settings-api/
+- Sanitization callbacks: https://developer.wordpress.org/apis/security/sanitizing-securing-output/
+
+**Implementation Notes:**
+- Use `settings_fields()` and `do_settings_sections()` for rendering
+- Add tooltip help icons with `wc_help_tip()`
+- Sanitize dates: validate ISO format, use `DateTime::createFromFormat()`
+- Store holiday dates as indexed array (not associative)
+
+---
+
+## 5. Frontend Assets
+
+### 5.1 JavaScript (checkout-date-selector.js)
+
+**Purpose:** Handle date selection changes, potential AJAX updates
+
+**Enqueue:**
+```php
+wp_enqueue_script(
+    'ass-checkout-date-selector',
+    plugin_dir_url(__FILE__) . 'assets/js/checkout-date-selector.js',
+    ['jquery', 'wc-checkout'],
+    '1.0.0',
+    true
+);
+```
+
+**Functionality:**
+- Listen for shipping method changes
+- Potentially trigger AJAX update to show/hide date selector
+- Validation before checkout submission
+
+**Implementation Notes:**
+- WooCommerce already handles AJAX updates via `woocommerce_update_order_review`
+- Hook into existing WooCommerce checkout JS events
+- Minimal custom JS needed if using proper hooks
+
+---
+
+### 5.2 CSS (frontend-styles.css & admin-styles.css)
+
+**Purpose:** Styling for frontend shortcode and admin pages
+
+**Frontend Styles:**
+- `.ass-shipping-info` container
+- `.ass-method` individual method display
+- `.ass-date` date labels
+- Responsive design considerations
+
+**Admin Styles:**
+- Drag-and-drop zones styling
+- Category pills/badges
+- Repeater field row styling
+- Consistent with WooCommerce admin UI
+
+**Enqueue:**
+```php
+wp_enqueue_style('ass-frontend-styles', ...);
+wp_enqueue_style('ass-admin-styles', ..., ['woocommerce_admin_styles']);
+```
+
+---
+
+## 6. Key WordPress/WooCommerce Hooks Reference
+
+### Critical Hooks for This Plugin:
+
+1. **`plugins_loaded` (priority 20)** - Initialize plugin after WooCommerce
+   - https://developer.wordpress.org/reference/hooks/plugins_loaded/
+
+2. **`before_woocommerce_init`** - Declare HPOS compatibility
+   - https://github.com/woocommerce/woocommerce/wiki/High-Performance-Order-Storage-Upgrade-Recipe-Book
+
+3. **`woocommerce_package_rates`** - Filter shipping methods
+   - https://woocommerce.github.io/code-reference/hooks/woocommerce_package_rates.html
+
+4. **`woocommerce_review_order_after_shipping`** - Display date selector
+   - https://woocommerce.github.io/code-reference/hooks/woocommerce_review_order_after_shipping.html
+
+5. **`woocommerce_checkout_process`** - Validate checkout fields
+   - https://woocommerce.github.io/code-reference/hooks/woocommerce_checkout_process.html
+
+6. **`woocommerce_checkout_create_order`** - Save order meta
+   - https://woocommerce.github.io/code-reference/hooks/woocommerce_checkout_create_order.html
+
+7. **`admin_menu`** - Register admin pages
+   - https://developer.wordpress.org/reference/hooks/admin_menu/
+
+8. **`admin_init`** - Register settings
+   - https://developer.wordpress.org/reference/hooks/admin_init/
+
+---
+
+## 7. Code Quality Standards
+
+### DRY (Don't Repeat Yourself)
+- Extract common logic into private helper methods
+- Share date visibility logic between checkout and shortcode
+- Reuse category matching logic across classes
+- Settings manager as single source of truth
+
+### KISS (Keep It Simple, Stupid)
+- Small, focused methods (max 20-30 lines)
+- Single responsibility per class
+- Avoid over-engineering or premature optimization
+- Clear, linear logic flow
+
+### YAGNI (You Aren't Gonna Need It)
+- No caching layer (premature optimization)
+- No custom database tables (use Options API)
+- No AJAX unless absolutely necessary (WooCommerce handles it)
+- No admin frameworks (use native Settings API)
+
+### Explicit Typing (PHP 7.4+)
+```php
+// Always use type hints
+public function calculate_date(array $days, int $max): string
+
+// Use return types
+private function is_valid(): bool
+
+// Use property types
+private Settings_Manager $settings;
+```
+
+### Clear Naming
+- Classes: `Class_Name_With_Hyphens_In_File` → `class-name-with-hyphens.php`
+- Methods: `verb_noun()` pattern → `get_categories()`, `save_rules()`, `calculate_date()`
+- Variables: descriptive, not abbreviated → `$shipping_method` not `$sm`
+- Constants: `UPPERCASE_WITH_UNDERSCORES`
+
+### Function Size
+- Target: 10-20 lines per function
+- Max: 30 lines before refactoring
+- If function does more than one thing, split it
+
+---
+
+## 8. Data Validation & Security
+
+### Input Sanitization
+```php
+// Text inputs
+$label = sanitize_text_field($_POST['label']);
+
+// Arrays
+$categories = array_map('absint', $_POST['categories']);
+
+// Dates
+$date = sanitize_text_field($_POST['date']);
+if (!DateTime::createFromFormat('Y-m-d', $date)) {
+    // Invalid date
+}
+
+// Checkboxes (sending days)
+$days = isset($_POST['days']) ? array_map('absint', $_POST['days']) : [];
+$days = array_filter($days, fn($d) => $d >= 1 && $d <= 7);
+```
+
+### Output Escaping
+```php
+// HTML content
+echo esc_html($label);
+
+// Attributes
+echo '<div data-date="' . esc_attr($date) . '">';
+
+// URLs
+echo esc_url($link);
+```
+
+### Nonce Verification
+```php
+// Admin forms
+wp_nonce_field('ass_save_rules', 'ass_rules_nonce');
+check_admin_referer('ass_save_rules', 'ass_rules_nonce');
+
+// AJAX
+wp_create_nonce('ass_ajax_action');
+check_ajax_referer('ass_ajax_action');
+```
+
+### Capability Checks
+```php
+if (!current_user_can('manage_woocommerce')) {
+    wp_die(__('Insufficient permissions'));
+}
+```
+
+**Documentation:**
+- Data validation: https://developer.wordpress.org/apis/security/data-validation/
+- Sanitization: https://developer.wordpress.org/apis/security/sanitizing-securing-output/
+- Nonces: https://developer.wordpress.org/apis/security/nonces/
+
+---
+
+## 11. Additional Resources
+
+### WooCommerce Documentation
+- Main docs: https://woocommerce.com/documentation/
+- Code reference: https://woocommerce.github.io/code-reference/
+- Hooks reference: https://woocommerce.github.io/code-reference/hooks/hooks.html
+
+### WordPress Documentation
+- Plugin handbook: https://developer.wordpress.org/plugins/
+- Coding standards: https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/
+- APIs: https://developer.wordpress.org/apis/
+
+### PHP DateTime
+- DateTime: https://www.php.net/manual/en/class.datetime.php
+- DateTimeImmutable: https://www.php.net/manual/en/class.datetimeimmutable.php
+
+### JavaScript Libraries
+- Sortable.js: https://sortablejs.github.io/Sortable/
+
+---
+
+## 12. Notes on Modern WooCommerce Development
+
+### HPOS Compatibility (Critical)
+- Never use `$wpdb` queries on `wp_posts` for orders
+- Never use `add_post_meta()` / `update_post_meta()` for orders
+- Always use `WC_Order` methods: `$order->update_meta_data()`
+- Declare compatibility in main plugin file
+
+### Modern WooCommerce Practices
+- Use `WC()` singleton to access cart/session
+- Use `wc_get_order()` to get order objects
+- Use `WC_Product` methods, not direct database queries
+- Leverage WooCommerce's built-in validation and sanitization
+
+### Performance Considerations
+- Options API is cached by WordPress (fast enough)
+- No need for object caching on small datasets
+- Database queries minimized (WooCommerce handles this)
+- Lazy load admin assets (only on plugin pages)
+
+---
+
+This plan provides a comprehensive roadmap for implementing the Advanced Shipping Settings plugin following modern WordPress/WooCommerce standards, with explicit emphasis on code quality (DRY, KISS, YAGNI), type safety, and HPOS compatibility. All referenced documentation links are current and point to official sources or well-maintained libraries.

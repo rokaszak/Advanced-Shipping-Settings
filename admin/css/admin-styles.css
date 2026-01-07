@@ -1,0 +1,254 @@
+.ass-admin-page .hidden {
+    display: none;
+}
+
+.ass-rules-layout {
+    margin-top: 20px;
+}
+
+#ass-rules-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.ass-main-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.ass-sidebar {
+    flex-shrink: 0;
+    width: 280px;
+    position: sticky;
+    top: 40px;
+}
+
+.ass-sidebar-inner {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.ass-method-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.ass-method-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.ass-method-header h3 {
+    margin: 0;
+}
+
+.ass-method-header .method-id {
+    font-weight: normal;
+    font-size: 0.8em;
+    color: #888;
+}
+
+.ass-field {
+    margin-bottom: 15px;
+}
+
+.ass-field > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.ass-days-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ass-category-dropzone {
+    min-height: 50px;
+    border: 2px dashed #ccd0d4;
+    padding: 10px;
+    background: #f9f9f9;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.ass-cat-pill {
+    background: #007cba;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: grab;
+}
+
+.ass-cat-pill:active {
+    cursor: grabbing;
+}
+
+.ass-cat-pill .remove-cat {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.ass-category-source {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.ass-date-row {
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fdfdfd;
+}
+
+.ass-date-fields {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.ass-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.ass-input-group label {
+    font-size: 11px;
+    margin-bottom: 2px;
+    color: #666;
+}
+
+.ass-footer-save {
+    flex-basis: 100%;
+    margin-top: 30px;
+    padding: 20px 0;
+    border-top: 1px solid #ccd0d4;
+}
+
+.ass-holiday-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.remove-holiday-row {
+    color: #a00;
+    cursor: pointer;
+    font-size: 20px;
+    background: none;
+    border: none;
+    line-height: 1;
+}
+
+.remove-date-row {
+    color: #a00 !important;
+    border-color: #a00 !important;
+}
+
+.remove-date-row:hover {
+    background: #fbeaea !important;
+}
+
+/* Custom Help Tips - Using unique class to avoid WooCommerce conflicts */
+.ass-help-tip {
+    cursor: help;
+    display: inline-block;
+    font-size: 16px;
+    font-style: normal;
+    height: 16px;
+    line-height: 16px;
+    position: relative;
+    vertical-align: middle;
+    width: 16px;
+    margin-left: 5px;
+}
+
+.ass-help-tip::after {
+    font-family: Dashicons;
+    speak: never;
+    font-weight: 400;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    text-indent: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    content: "\f223";
+    cursor: help;
+    color: #666;
+}
+
+.ass-help-tip:hover::after {
+    color: #0073aa;
+}
+
+.ass-tooltip-content {
+    position: absolute;
+    background: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 250px;
+    z-index: 100000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.ass-tooltip-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.ass-tooltip-content.ass-tooltip-below::after {
+    top: -10px;
+    border-color: transparent transparent #333 transparent;
+}
+
+@media (max-width: 1200px) {
+    #ass-rules-form {
+        flex-direction: column;
+    }
+    
+    .ass-sidebar {
+        width: 100%;
+        position: static;
+    }
+}
+

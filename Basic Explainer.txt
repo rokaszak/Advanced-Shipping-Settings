@@ -1,0 +1,50 @@
+I will be making a custom wordpress plugin called "Advanced Shipping Settings" . For now you have to understand what consists of it, what it does, what settings and pages it has. First of all the idea, is that this plugins works with any woocommerce shipping methods and standard woocommerce categories. What it does is it allows a user to conditionally select which product categories are avaible in which shipping method with a bit more detail.
+
+A shipping method allows the user to select it from two options:
+
+1) ASAP
+
+2) BY DATE.
+
+ASAP is used for shipping thats done every so often without an exact date of arrival, such as parcel machines and etc. If this is selected for that shipping method the user has to select multiple select which days packages are sent out (Mo, Tu, We,  Th, Fr, Sa, Su) and the Max ship time in work days (Mo, Tu, We, Th, Fri, and removing national lithuanian holiday days). For example a shipping method "Parcel machine" has sending days as thursday and max ship time is 4 work days. A product that has this shipping method available if todays date is 2026-01-07 Wednesday. That means the product would be eligible to shipped on thursday and would take max 4 work days to arrive, that means its shipped on 01-08 , 01-09 friday is the first shipping day, 01-10 and 01-11 are non working days, 01-12 is the second shipping day, 01-13 is the third shipping day, 01-14 is the fourth shipping day so that means that this product "Pristatymas ne vėliau kaip trečiadienis, 2026-01-14".
+
+After the sending days option and max ship time, user simply drags in the product categories to this shipping method that he wants to allow.
+
+BY DATE is used for shipping thats done on exact days. If this option is selected for a shipping method, a user must add dates to that shipping method, a date will have ISO eu format date, label and product categories that have this shipping method and this date.  For example 2026-01-09 , label is Sausio 9 d. and then user drags categories to this date.
+
+This is the settings page of actual shipping. A user clicks global "save" button to save all changes made here.
+
+Using these settings the plugin modifies what the user can select as his shipping method for his cart content. The rule is simple: AND. Only shown shipping methods are the matching ones for all cart categories. So if a user has two category products in his cart, those categories must share a shipping method where they are both included (in BY DATE case, the reservation date must match as well).
+
+In the checkout page the user either sees a label or a box with selections. This depends on the chosen shipping method for his cart. If the chosen method is "ASAP" he only sees a label which shows "Pristatymas ne vėliau kaip trečiadienis, 2026-01-14", if the chosen method is "BY DATE" he will see a box where he must select a date. The dates shown are the ones that all cart product categories have matching. This is simple radio buttons. 
+
+Users choosen date is saved as simple order meta field "reservation_date" and the shown ASAP date is saved as "asap_date".
+
+Finally the plugin exposes a shortcode to use in product pages which shows available methods and either dates or asap date for that method, so the user can know when this product can be received in the actual product page.
+
+So to summarize the plugin:
+
+
+
+
+
+Has settings page to select actual rules
+
+
+
+Effects available shipping methods by cart categories
+
+
+
+Either shows user label or requires to select reservation date depending on selected shipping method
+
+
+
+Saves asap_date or reservation_date to order meta data.
+
+
+
+Exposes shortcode to use in product pages which shows available methods and their reservation dates/asap date.
+
+For now I need you to simply try to understand what I want and save this information to your context. After you say "I analyzed the given" information I will provide pictures of wireframe pages in attempt to clear up any assumptions. Then you will be able to reply with additional questions. The goal of this chat is not to code, create code, but rather only when i ask, you will be creating a detailed PLAN which defines the plugin file structure, what each file consists, what solutions, hooks and wp things have to be used according to latest documentation, supporting HPOS for woocommerce.
+

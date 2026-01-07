@@ -1,0 +1,96 @@
+/**
+ * Frontend Styles for Advanced Shipping Settings
+ */
+
+/* Checkout Info Box */
+.ass-checkout-shipping-info {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.ass-asap-date-info {
+    margin: 0;
+    font-size: 14px;
+}
+
+.ass-reservation-prompt {
+    margin-bottom: 10px;
+    display: block;
+    font-size: 14px;
+}
+
+.ass-date-options {
+    margin-top: 5px;
+}
+
+.ass-date-option {
+    cursor: pointer;
+    display: inline-block;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.ass-date-option input[type="radio"] {
+    margin-right: 8px;
+}
+
+.ass-no-dates-error {
+    color: #a00;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Product Page Shortcode Styling */
+.ass-shipping-info {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #eee;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.ass-method {
+    margin-bottom: 20px;
+}
+
+.ass-method:last-child {
+    margin-bottom: 0;
+}
+
+.ass-method-name {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.ass-date-label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #666;
+}
+
+.ass-date {
+    font-size: 14px;
+    padding-left: 12px;
+    color: #444;
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.ass-date:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ccc;
+}
+
+.ass-asap-date {
+    font-size: 14px;
+    color: #444;
+}
+
