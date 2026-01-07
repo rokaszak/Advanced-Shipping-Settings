@@ -38,7 +38,10 @@ class Checkout_Handler {
 
 		$chosen_method = $chosen_methods[0];
 		$rules         = Settings_Manager::instance()->get_shipping_rules();
-		$rule          = $rules[ $chosen_method ] ?? null;
+
+		// Extract method_id from chosen method (WPFactory pattern)
+		$method_id = $this->get_method_id_from_rate_key( $chosen_method );
+		$rule      = $rules[ $method_id ] ?? null;
 
 		if ( ! $rule ) {
 			return;
@@ -144,6 +147,15 @@ class Checkout_Handler {
 	}
 
 	/**
+	 * Extract method_id from WooCommerce rate key.
+	 * Rate keys are in format "method_id:instance_id" (e.g., "flat_rate:5").
+	 */
+	private function get_method_id_from_rate_key( string $rate_key ): string {
+		$parts = explode( ':', $rate_key, 2 );
+		return $parts[0];
+	}
+
+	/**
 	 * Validate date selection during checkout.
 	 */
 	public function validate_date_selection(): void {
@@ -154,7 +166,10 @@ class Checkout_Handler {
 
 		$chosen_method = $chosen_methods[0];
 		$rules         = Settings_Manager::instance()->get_shipping_rules();
-		$rule          = $rules[ $chosen_method ] ?? null;
+
+		// Extract method_id from chosen method
+		$method_id = $this->get_method_id_from_rate_key( $chosen_method );
+		$rule      = $rules[ $method_id ] ?? null;
 
 		if ( ! $rule || 'by_date' !== $rule['type'] ) {
 			return;

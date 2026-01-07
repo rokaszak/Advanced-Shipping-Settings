@@ -43,7 +43,7 @@ class Shipping_Rules_Page {
 					
 					<div class="ass-main-content">
 						<div class="ass-methods-list">
-							<?php foreach ( $shipping_methods as $method_id => $method ) : 
+							<?php foreach ( $shipping_methods as $method_id => $method ) :
 								$rule = $current_rules[ $method_id ] ?? [ 'type' => 'asap' ];
 								?>
 								<div class="ass-method-card" data-method-id="<?php echo esc_attr( $method_id ); ?>">
@@ -201,66 +201,28 @@ class Shipping_Rules_Page {
 	}
 
 	/**
-	 * Get all active WooCommerce shipping methods across all zones.
-	 * Uses WC()->shipping()->load_shipping_methods() to get all registered shipping method classes.
+	 * Get all WooCommerce shipping method types (WPFactory pattern).
+	 * Uses WC()->shipping()->load_shipping_methods() and stores by method_id only.
 	 */
 	private function get_available_shipping_methods(): array {
 		$methods = [];
-		
-		$shipping_method_classes = WC()->shipping()->load_shipping_methods();
-		
-		$zones = \WC_Shipping_Zones::get_zones();
-		$rest_of_world = \WC_Shipping_Zones::get_zone( 0 );
-		$zones[] = [
-			'zone_id'   => 0,
-			'zone_name' => $rest_of_world->get_zone_name(),
-			'shipping_methods' => $rest_of_world->get_shipping_methods(),
-		];
 
-		$method_instances = [];
-		foreach ( $zones as $zone ) {
-			$zone_name = $zone['zone_name'];
-			foreach ( $zone['shipping_methods'] as $instance ) {
-				if ( ! $instance->is_enabled() ) continue;
-				
-				$method_id = $instance->id;
-				$instance_id = $instance->get_instance_id();
-				$full_id = $method_id . ':' . $instance_id;
-				
-				if ( ! isset( $method_instances[ $method_id ] ) ) {
-					$method_instances[ $method_id ] = [];
-				}
-				
-				$method_instances[ $method_id ][] = [
-					'instance' => $instance,
-					'zone_name' => $zone_name,
-					'full_id' => $full_id,
-				];
-			}
-		}
+		$shipping_method_classes = WC()->shipping()->load_shipping_methods();
 
 		foreach ( $shipping_method_classes as $method_class ) {
 			if ( ! is_object( $method_class ) ) {
 				continue;
 			}
-			
+
 			$method_id = $method_class->id ?? '';
 			if ( empty( $method_id ) ) {
 				continue;
 			}
-			
-			if ( isset( $method_instances[ $method_id ] ) ) {
-				foreach ( $method_instances[ $method_id ] as $instance_data ) {
-					$instance = $instance_data['instance'];
-					$zone_name = $instance_data['zone_name'];
-					$full_id = $instance_data['full_id'];
-					
-					$methods[ $full_id ] = [
-						'title' => $zone_name . ' - ' . $instance->get_title(),
-						'id'    => $full_id,
-					];
-				}
-			}
+
+			$methods[ $method_id ] = [
+				'title' => $method_class->get_method_title(),
+				'id'    => $method_id,
+			];
 		}
 
 		return $methods;

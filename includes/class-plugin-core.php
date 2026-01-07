@@ -39,6 +39,7 @@ class Plugin_Core {
 
 	private function includes(): void {
 		require_once ASS_PATH . 'includes/helper-functions.php';
+		require_once ASS_PATH . 'includes/class-hooks.php';
 		require_once ASS_PATH . 'includes/class-settings-manager.php';
 		require_once ASS_PATH . 'includes/class-date-calculator.php';
 		require_once ASS_PATH . 'includes/class-shipping-filter.php';
@@ -62,9 +63,9 @@ class Plugin_Core {
 		}
 
 		// Initialize components
+		Hooks::instance(); // Handles shipping filtering and checkout validation
 		Settings_Manager::instance();
 		Date_Calculator::instance();
-		Shipping_Filter::instance();
 		Checkout_Handler::instance();
 		Order_Meta_Handler::instance();
 		Shortcode_Handler::instance();
@@ -83,6 +84,7 @@ class Plugin_Core {
 	public function enqueue_frontend_assets(): void {
 		wp_enqueue_style( 'ass-frontend-styles', ASS_URL . 'assets/css/frontend-styles.css', [], ASS_VERSION );
 		wp_enqueue_script( 'ass-checkout-date-selector', ASS_URL . 'assets/js/checkout-date-selector.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
+		wp_enqueue_script( 'ass-checkout-update', ASS_URL . 'assets/js/checkout-update.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
 	}
 
 	public function enqueue_admin_assets(): void {

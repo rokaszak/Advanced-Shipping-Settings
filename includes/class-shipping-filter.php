@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Filter available shipping methods based on cart categories.
+ * Modeled after WPFactory's shipping filtering approach.
  */
 class Shipping_Filter {
 
@@ -20,11 +21,11 @@ class Shipping_Filter {
 	}
 
 	private function __construct() {
-		add_filter( 'woocommerce_package_rates', [ $this, 'filter_shipping_methods' ], PHP_INT_MAX, 2 );
+		// Hook is now handled by the Hooks class
 	}
 
 	/**
-	 * Filter shipping methods based on rules.
+	 * Filter shipping methods based on rules using WPFactory pattern.
 	 */
 	public function filter_shipping_methods( array $rates, array $package ): array {
 		$rules = Settings_Manager::instance()->get_shipping_rules();
@@ -32,33 +33,71 @@ class Shipping_Filter {
 			return $rates;
 		}
 
-		// Group categories by product to enforce "AND" logic across products.
+		$unset = [];
+		foreach ( $rates as $rate_key => $rate ) {
+			$validation = $this->validate_shipping_method( $rate, $package );
+
+			if ( ! $validation['res'] ) {
+				$unset[ $rate_key ] = [
+					'rate' => $rate,
+					'hide_reason' => $validation['hide_reason']
+				];
+				unset( $rates[ $rate_key ] );
+			}
+		}
+
+		// Store hidden methods in session for notices
+		$session_data = WC()->session->get( 'ass_shipping_data', [] );
+		$session_data['unset'] = $unset;
+		WC()->session->set( 'ass_shipping_data', $session_data );
+
+		return $rates;
+	}
+
+	/**
+	 * Validate if a shipping method should be available for the current package.
+	 * Returns array with 'res' (boolean) and 'hide_reason' (string).
+	 */
+	public function validate_shipping_method( $rate, array $package ): array {
+		$rules = Settings_Manager::instance()->get_shipping_rules();
+
+		// Get method_id from rate object (WPFactory pattern)
+		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
+		$method_rule = $rules[ $method_id ] ?? null;
+
+		if ( ! $method_rule ) {
+			// No rules for this method type = allow it
+			return [ 'res' => true, 'hide_reason' => false ];
+		}
+
+		// Get cart categories for validation
+		$products_categories = $this->get_cart_categories( $package );
+
+		if ( ! $this->is_method_available_for_products( $method_rule, $products_categories ) ) {
+			return [
+				'res' => false,
+				'hide_reason' => 'category_mismatch'
+			];
+		}
+
+		return [ 'res' => true, 'hide_reason' => false ];
+	}
+
+	/**
+	 * Get categories from all products in the cart.
+	 */
+	private function get_cart_categories( array $package ): array {
 		$products_categories = [];
 		foreach ( $package['contents'] as $item ) {
 			$product = $item['data']; // WC_Product object from package
 			$product_cats = $product->get_category_ids(); // WooCommerce method
 			if ( empty( $product_cats ) ) {
-				// Product with no categories = immediate fail for all configured methods.
-				// However, we should only return empty if there's at least one configured method.
-				// For simplicity, we'll mark this product as having no categories.
 				$products_categories[] = [];
 			} else {
 				$products_categories[] = $product_cats;
 			}
 		}
-
-		foreach ( $rates as $rate_id => $rate ) {
-			$method_rule = $rules[ $rate_id ] ?? null;
-			if ( ! $method_rule ) {
-				continue;
-			}
-
-			if ( ! $this->is_method_available_for_products( $method_rule, $products_categories ) ) {
-				unset( $rates[ $rate_id ] );
-			}
-		}
-
-		return $rates;
+		return $products_categories;
 	}
 
 	/**
