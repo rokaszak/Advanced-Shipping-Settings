@@ -150,7 +150,7 @@ class Checkout_Handler {
 		}
 
 		// Build field HTML
-		$field_html = '<div class="ass-checkout-shipping-info">';
+		$field_html = '<div class="ass-checkout-shipping-info bricks-woo-update-ajax">';
 
 		if ( 'asap' === $rule['type'] ) {
 			$field_html .= $this->render_asap_info_html( $rule );
