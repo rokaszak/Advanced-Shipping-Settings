@@ -56,6 +56,9 @@ jQuery(document).ready(function($) {
                     var inputName = '';
                     if (type === 'asap') {
                         inputName = 'rules[' + methodId + '][categories][]';
+                    } else if (type === 'priority_day') {
+                        var pIndex = $(itemEl).closest('.ass-priority-day-row').data('index');
+                        inputName = 'rules[' + methodId + '][priority_days][' + pIndex + '][categories][]';
                     } else {
                         inputName = 'rules[' + methodId + '][dates][' + dateIndex + '][categories][]';
                     }
@@ -101,6 +104,27 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // Priority Days Repeater
+    $(document).on('click', '.add-priority-day-row', function() {
+        var $repeater = $(this).closest('.ass-priority-days-repeater');
+        var $container = $repeater.find('.ass-priority-days-container');
+        var methodId = $repeater.data('method-id');
+        var nextIndex = $container.find('.ass-priority-day-row').length;
+        
+        var template = $('#ass-priority-day-row-template').html();
+        var html = template.replace(/{index}/g, nextIndex).replace(/{method_id}/g, methodId);
+        
+        $container.append(html);
+        initSortable();
+        setTimeout(initTooltips, 100);
+    });
+
+    $(document).on('click', '.remove-priority-day-row', function() {
+        if (confirm('Are you sure you want to remove this priority day and its categories?')) {
+            $(this).closest('.ass-priority-day-row').remove();
+        }
+    });
+
     /**
      * Plugin Settings Page Logic
      */
@@ -116,6 +140,66 @@ jQuery(document).ready(function($) {
 
     $(document).on('click', '.remove-holiday-row', function() {
         $(this).closest('.ass-holiday-row').remove();
+    });
+
+    // Pickup Locations Repeater
+    $(document).on('click', '.add-pickup-row', function() {
+        var $container = $('.ass-pickup-locations-container');
+        var nextIndex = $container.find('.ass-pickup-location-row').length;
+        var template = $('#ass-pickup-location-row-template').html();
+        var html = template.replace(/{index}/g, nextIndex);
+        $container.append(html);
+    });
+
+    $(document).on('click', '.remove-pickup-row', function() {
+        if (confirm('Are you sure you want to remove this pickup location?')) {
+            $(this).closest('.ass-pickup-location-row').remove();
+        }
+    });
+
+    // Media Picker for Settings and Pickup Locations
+    $(document).on('click', '.ass-upload-button', function(e) {
+        e.preventDefault();
+        var $button = $(this);
+        var $wrapper = $button.closest('.ass-image-picker');
+        var $preview = $wrapper.find('.ass-image-preview');
+        var $inputId = $wrapper.find('.ass-image-id');
+        var $removeBtn = $wrapper.find('.ass-remove-image-button');
+
+        var frame = wp.media({
+            title: 'Select Image',
+            button: {
+                text: 'Use this image'
+            },
+            multiple: false
+        });
+
+        frame.on('select', function() {
+            var attachment = frame.state().get('selection').first().toJSON();
+            $inputId.val(attachment.id);
+            
+            var thumbUrl = attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url;
+            $preview.html('<img src="' + thumbUrl + '" style="max-width: 50px; height: auto; display: block; margin-bottom: 5px;">');
+            
+            $button.text('Change Image');
+            $removeBtn.removeClass('hidden');
+        });
+
+        frame.open();
+    });
+
+    $(document).on('click', '.ass-remove-image-button', function(e) {
+        e.preventDefault();
+        var $button = $(this);
+        var $wrapper = $button.closest('.ass-image-picker');
+        var $preview = $wrapper.find('.ass-image-preview');
+        var $inputId = $wrapper.find('.ass-image-id');
+        var $uploadBtn = $wrapper.find('.ass-upload-button');
+
+        $inputId.val('');
+        $preview.empty();
+        $button.addClass('hidden');
+        $uploadBtn.text('Select Image');
     });
 
     function initTooltips() {

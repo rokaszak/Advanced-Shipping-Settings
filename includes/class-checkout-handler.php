@@ -184,11 +184,19 @@ class Checkout_Handler {
 	 * Render ASAP info label as HTML string.
 	 */
 	private function render_asap_info_html( array $rule ): string {
-		$sending_days  = $rule['sending_days'] ?? [];
-		$max_ship_days = $rule['max_ship_days'] ?? 0;
-		$holidays      = Settings_Manager::instance()->get_holiday_dates();
+		$holidays = Settings_Manager::instance()->get_holiday_dates();
 		
-		$asap_date = Date_Calculator::instance()->calculate_asap_date( $sending_days, $max_ship_days, $holidays );
+		// Collect cart products categories
+		$products_categories = [];
+		$packages = WC()->shipping()->get_packages();
+		foreach ( $packages as $package ) {
+			foreach ( $package['contents'] as $item ) {
+				$product = $item['data'];
+				$products_categories[] = $product->get_category_ids();
+			}
+		}
+
+		$asap_date = Date_Calculator::instance()->calculate_asap_date_with_priority( $rule, $holidays, $products_categories );
 		
 		if ( ! $asap_date ) {
 			return '';

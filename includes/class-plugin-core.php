@@ -46,11 +46,13 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-checkout-handler.php';
 		require_once ASS_PATH . 'includes/class-order-meta-handler.php';
 		require_once ASS_PATH . 'includes/class-shortcode-handler.php';
+		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
 
 		if ( is_admin() ) {
 			require_once ASS_PATH . 'admin/class-admin-menu.php';
 			require_once ASS_PATH . 'admin/class-shipping-rules-page.php';
 			require_once ASS_PATH . 'admin/class-plugin-settings-page.php';
+			require_once ASS_PATH . 'admin/class-pickup-locations-page.php';
 		}
 	}
 
@@ -74,6 +76,7 @@ class Plugin_Core {
 			Admin_Menu::instance();
 			Shipping_Rules_Page::instance();
 			Plugin_Settings_Page::instance();
+			Pickup_Locations_Page::instance();
 		}
 	}
 
@@ -101,8 +104,9 @@ class Plugin_Core {
 			wp_enqueue_script( 'ass-shipping-rules-admin', ASS_URL . 'admin/js/shipping-rules-admin.js', [ 'sortable', 'jquery' ], ASS_VERSION, true );
 		}
 		
-		// Enqueue JS on settings page for holiday repeater
-		if ( 'advanced-shipping-settings-config' === $page ) {
+		// Enqueue media and JS on settings and pickup pages
+		if ( 'advanced-shipping-settings-config' === $page || 'advanced-shipping-settings-pickup' === $page ) {
+			wp_enqueue_media();
 			wp_enqueue_script( 'ass-settings-admin', ASS_URL . 'admin/js/shipping-rules-admin.js', [ 'jquery' ], ASS_VERSION, true );
 		}
 	}

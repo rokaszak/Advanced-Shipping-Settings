@@ -152,6 +152,53 @@ class Plugin_Settings_Page {
 
 				<hr>
 
+				<h2 class="title"><?php esc_html_e( 'Shipping Method Display', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Customize how shipping methods appear in the shortcode display. Set custom names and upload logos.', 'advanced-shipping-settings' ) ); ?></h2>
+				<table class="form-table ass-method-display-table">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Shipping Method', 'advanced-shipping-settings' ); ?></th>
+							<th><?php esc_html_e( 'Custom Display Name', 'advanced-shipping-settings' ); ?></th>
+							<th><?php esc_html_e( 'Logo/Photo', 'advanced-shipping-settings' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						$shipping_methods = $this->get_available_shipping_methods();
+						$method_display_names = $settings['method_display_names'] ?? [];
+						$method_images = $settings['method_images'] ?? [];
+
+						foreach ( $shipping_methods as $method_id => $method ) :
+							$display_name = $method_display_names[ $method_id ] ?? '';
+							$image_id = $method_images[ $method_id ] ?? '';
+							$image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : '';
+							?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $method['title'] ); ?></strong><br>
+									<code><?php echo esc_html( $method_id ); ?></code>
+								</td>
+								<td>
+									<input type="text" name="settings[method_display_names][<?php echo esc_attr( $method_id ); ?>]" value="<?php echo esc_attr( $display_name ); ?>" class="regular-text" placeholder="<?php echo esc_attr( $method['title'] ); ?>">
+								</td>
+								<td>
+									<div class="ass-image-picker">
+										<div class="ass-image-preview">
+											<?php if ( $image_url ) : ?>
+												<img src="<?php echo esc_url( $image_url ); ?>" style="max-width: 50px; height: auto; display: block; margin-bottom: 5px;">
+											<?php endif; ?>
+										</div>
+										<input type="hidden" name="settings[method_images][<?php echo esc_attr( $method_id ); ?>]" value="<?php echo esc_attr( $image_id ); ?>" class="ass-image-id">
+										<button type="button" class="button ass-upload-button"><?php echo $image_id ? esc_html__( 'Change Image', 'advanced-shipping-settings' ) : esc_html__( 'Select Image', 'advanced-shipping-settings' ); ?></button>
+										<button type="button" class="button ass-remove-image-button <?php echo $image_id ? '' : 'hidden'; ?>"><?php esc_html_e( 'Remove', 'advanced-shipping-settings' ); ?></button>
+									</div>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+
+				<hr>
+
 				<h2 class="title"><?php esc_html_e( 'Hidden Shipping Methods', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Select shipping methods to hide from the Shipping Rules page. Hidden methods will not be configurable and their existing rules will be removed. Use this to simplify the shipping rules interface by hiding methods you don\'t need to configure.', 'advanced-shipping-settings' ) ); ?></h2>
 
 				<div class="ass-hidden-methods-section">
@@ -232,15 +279,29 @@ class Plugin_Settings_Page {
 
 		$raw_settings = isset( $_POST['settings'] ) ? (array) $_POST['settings'] : [];
 		$sanitized_settings = [
-			'translations'     => [],
-			'holiday_dates'    => [],
-			'hidden_methods'   => [],
-			'display_location' => 'billing',
+			'translations'         => [],
+			'holiday_dates'        => [],
+			'hidden_methods'       => [],
+			'method_display_names' => [],
+			'method_images'        => [],
+			'display_location'     => 'billing',
 		];
 
 		if ( isset( $raw_settings['translations'] ) ) {
 			foreach ( $raw_settings['translations'] as $key => $value ) {
 				$sanitized_settings['translations'][ sanitize_key( $key ) ] = sanitize_text_field( $value );
+			}
+		}
+
+		if ( isset( $raw_settings['method_display_names'] ) ) {
+			foreach ( $raw_settings['method_display_names'] as $method_id => $name ) {
+				$sanitized_settings['method_display_names'][ sanitize_text_field( $method_id ) ] = sanitize_text_field( $name );
+			}
+		}
+
+		if ( isset( $raw_settings['method_images'] ) ) {
+			foreach ( $raw_settings['method_images'] as $method_id => $image_id ) {
+				$sanitized_settings['method_images'][ sanitize_text_field( $method_id ) ] = absint( $image_id );
 			}
 		}
 

@@ -73,5 +73,35 @@ class Settings_Manager {
 		$translations = $settings['translations'] ?? [];
 		return ! empty( $translations[ $key ] ) ? $translations[ $key ] : $default;
 	}
+
+	/**
+	 * Get custom display names for shipping methods.
+	 */
+	public function get_method_display_names(): array {
+		$settings = $this->get_plugin_settings();
+		return $settings['method_display_names'] ?? [];
+	}
+
+	/**
+	 * Get custom images for shipping methods.
+	 */
+	public function get_method_images(): array {
+		$settings = $this->get_plugin_settings();
+		return $settings['method_images'] ?? [];
+	}
+
+	/**
+	 * Get pickup locations configuration.
+	 */
+	public function get_pickup_locations(): array {
+		return get_option( 'ass_pickup_locations', [] );
+	}
+
+	/**
+	 * Save pickup locations configuration.
+	 */
+	public function save_pickup_locations( array $locations ): bool {
+		return update_option( 'ass_pickup_locations', $locations );
+	}
 }
 

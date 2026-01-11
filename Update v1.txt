@@ -1,0 +1,50 @@
+1. Rename shipping methods for rules page and shortcode display (in settings page).
+2. Add logo/photo from wordpress gallery for each method, for shortcode display (in settings page).
+3. Add new settings page "Pickup Locations" which allow creating simple, free shipping methods (like woocommerce free_shipping but ability to enter) custom name, custom method id and display image/logo. Use same repeater from rules page. The user must then manually add this method to the shipping zone etc. ( // Register the shipping method
+add_filter('woocommerce_shipping_methods', function($methods) {
+    $methods['example_shipping_method'] = 'WC_Example_Shipping_Method';
+    return $methods;
+});
+
+// Define the shipping method class
+add_action('woocommerce_shipping_init', function() {
+    class WC_Example_Shipping_Method extends WC_Shipping_Method {
+        
+        public function __construct($instance_id = 0) {
+            $this->id = 'example_shipping_method';
+            $this->instance_id = absint($instance_id);
+            $this->method_title = __('Example Method');
+            $this->method_description = __('A simple free shipping method with custom icon');
+            $this->supports = array('shipping-zones', 'instance-settings');
+            
+            $this->init();
+        }
+        
+        public function init() {
+            $this->enabled = 'yes';
+            $this->title = 'Example Method';
+        }
+        
+        public function calculate_shipping($package = array()) {
+            $this->add_rate(array(
+                'id' => $this->id,
+                'label' => $this->title,
+                'cost' => 0
+            ));
+        }
+    }
+});
+
+// Add custom image to the shipping method display
+add_filter('woocommerce_cart_shipping_method_full_label', function($label, $method) {
+    if ($method->get_method_id() === 'example_shipping_method') {
+        $image_url = 'https://your-site.com/wp-content/uploads/your-shipping-icon.png';
+        $icon = '<img src="' . esc_url($image_url) . '" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;" alt="">';
+        
+        return $icon . $label;
+    }
+    return $label;
+}, 10, 2); )
+4. Priority days for ASAP shipping. Repeater field inside the asap column, you add a custom "send out date" and its priority over another priority day. Essentially it doesn't change the logic of conditional application to asap shipping, it changes when the order would be sent out.
+For example currently a user has macarons and dubajaus šokoladas in his cart. Venipak shipping method is set as asap, sending days are Thursday and max ship time is 2 work days. So today is 2026-01-11, the user seets the message "Pristatymas ne vėliau kaip pirmadienis, 2026-01-19". With the new feature the admin can separately add priority sending days which take effect over the normal sending days. For example the admin adds priority day:
+date=2026-02-16, label=Kalėdinė rezervacija, priority=1. He then drags dubajaus šokoladas from the normal column to the priority day column. Now a user has macarons and dubajaus šokoladas in his cart. Venipak shipping method is selected and the date 2026-01-11 but he sees the message "Pristatymas ne vėliau kaip pirmadienis, 2026-02-22" because he has that priority item which effects. This update does not require all the categories to be in both non priority days and priority days, the method is available no matter where its added, rather what changes is the delivery date.

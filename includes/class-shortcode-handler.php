@@ -85,14 +85,26 @@ class Shortcode_Handler {
 	private function render_ui( array $methods, array $product_cats ): void {
 		echo '<div class="ass-shipping-info">';
 		
+		$method_images = Settings_Manager::instance()->get_method_images();
+
 		foreach ( $methods as $method_id => $rule ) {
 			$method_name = $this->get_method_name( $method_id );
+			$image_id = $method_images[ $method_id ] ?? '';
 			
 			echo '<div class="ass-method">';
+			
+			echo '<div class="ass-method-header-display">';
+			if ( $image_id ) {
+				$image_url = wp_get_attachment_image_url( $image_id, 'thumbnail' );
+				if ( $image_url ) {
+					echo '<img src="' . esc_url( $image_url ) . '" class="ass-method-logo" alt="' . esc_attr( $method_name ) . '">';
+				}
+			}
 			echo '<div class="ass-method-name"><strong>' . esc_html( $method_name ) . '</strong></div>';
+			echo '</div>';
 
 			if ( 'asap' === $rule['type'] ) {
-				$this->render_asap_ui( $rule );
+				$this->render_asap_ui( $rule, $product_cats );
 			} else {
 				$this->render_by_date_ui( $rule, $product_cats );
 			}
@@ -105,11 +117,9 @@ class Shortcode_Handler {
 	/**
 	 * Render ASAP info.
 	 */
-	private function render_asap_ui( array $rule ): void {
-		$sending_days  = $rule['sending_days'] ?? [];
-		$max_ship_days = $rule['max_ship_days'] ?? 0;
+	private function render_asap_ui( array $rule, array $product_cats ): void {
 		$holidays      = Settings_Manager::instance()->get_holiday_dates();
-		$asap_date     = Date_Calculator::instance()->calculate_asap_date( $sending_days, $max_ship_days, $holidays );
+		$asap_date     = Date_Calculator::instance()->calculate_asap_date_with_priority( $rule, $holidays, [ $product_cats ] );
 
 		if ( ! $asap_date ) {
 			return;
@@ -155,8 +165,21 @@ class Shortcode_Handler {
 	 * Helper to get shipping method name.
 	 */
 	private function get_method_name( string $method_id_instance ): string {
+		$custom_names = Settings_Manager::instance()->get_method_display_names();
+		
+		// 1. Check if we have a custom name for the full instance ID (e.g. flat_rate:1)
+		if ( ! empty( $custom_names[ $method_id_instance ] ) ) {
+			return $custom_names[ $method_id_instance ];
+		}
+
 		$parts = explode( ':', $method_id_instance );
+		$method_id = $parts[0];
 		$instance_id = $parts[1] ?? '';
+
+		// 2. Check if we have a custom name for the base method ID (e.g. flat_rate)
+		if ( ! empty( $custom_names[ $method_id ] ) ) {
+			return $custom_names[ $method_id ];
+		}
 
 		if ( $instance_id ) {
 			$method = \WC_Shipping_Zones::get_shipping_method( $instance_id );

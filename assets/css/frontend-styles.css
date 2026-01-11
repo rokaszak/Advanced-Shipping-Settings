@@ -61,10 +61,23 @@
     margin-bottom: 0;
 }
 
+.ass-method-header-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.ass-method-logo {
+    max-width: 40px;
+    height: auto;
+    flex-shrink: 0;
+}
+
 .ass-method-name {
     font-size: 16px;
-    margin-bottom: 8px;
     color: #333;
+    margin: 0;
 }
 
 .ass-date-label {
