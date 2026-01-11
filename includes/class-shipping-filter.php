@@ -96,6 +96,17 @@ class Shipping_Filter {
 	private function is_method_available_for_products( array $rule, array $products_categories ): bool {
 		if ( 'asap' === $rule['type'] ) {
 			$allowed_categories = $rule['categories'] ?? [];
+			
+			// Add categories from priority days
+			if ( ! empty( $rule['priority_days'] ) ) {
+				foreach ( $rule['priority_days'] as $p_day ) {
+					if ( ! empty( $p_day['categories'] ) ) {
+						$allowed_categories = array_merge( $allowed_categories, $p_day['categories'] );
+					}
+				}
+				$allowed_categories = array_unique( $allowed_categories );
+			}
+			
 			return $this->all_products_match_categories( $allowed_categories, $products_categories );
 		} elseif ( 'by_date' === $rule['type'] ) {
 			$dates = $rule['dates'] ?? [];

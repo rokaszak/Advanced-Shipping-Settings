@@ -14,10 +14,10 @@ class Pickup_Shipping_Method extends \WC_Shipping_Method {
 	/**
 	 * Constructor.
 	 */
-	public function __construct( $instance_id = 0, $method_id = 'ass_pickup', $title = 'Pickup' ) {
-		$this->id                 = $method_id;
+	public function __construct( $instance_id = 0, $method_id = '', $title = '' ) {
+		$this->id                 = $method_id ? $method_id : 'ass_pickup';
 		$this->instance_id        = absint( $instance_id );
-		$this->method_title       = $title;
+		$this->method_title       = $title ? $title : __( 'Pickup', 'advanced-shipping-settings' );
 		$this->method_description = __( 'Custom pickup location created via Advanced Shipping Settings.', 'advanced-shipping-settings' );
 		$this->supports           = [ 'shipping-zones', 'instance-settings' ];
 

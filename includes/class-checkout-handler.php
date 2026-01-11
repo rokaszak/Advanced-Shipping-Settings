@@ -69,6 +69,10 @@ class Checkout_Handler {
 	 * Display content in order review section.
 	 */
 	public function display_order_review_content(): void {
+		if ( wp_doing_ajax() ) {
+			return;
+		}
+
 		$display_location = $this->get_display_location();
 		if ( 'order_review' !== $display_location ) {
 			return;
@@ -92,8 +96,12 @@ class Checkout_Handler {
 			'class' => true,
 			'for' => true,
 		];
+		$allowed_html['div'] = [
+			'id' => true,
+			'class' => true,
+		];
 
-		echo '<div class="ass-checkout-order-review-wrapper">' . wp_kses( $content, $allowed_html ) . '</div>';
+		echo '<div id="ass-checkout-shipping-info-wrapper" class="ass-checkout-order-review-wrapper">' . wp_kses( $content, $allowed_html ) . '</div>';
 	}
 
 	/**
@@ -168,16 +176,8 @@ class Checkout_Handler {
 			return '';
 		}
 
-		// Return the custom HTML wrapped in form field structure
-		$field_id = $args['id'] ?? $key;
-		$field_class = isset( $args['class'] ) ? implode( ' ', $args['class'] ) : '';
-
-		return sprintf(
-			'<p class="form-row %s" id="%s_field">%s</p>',
-			esc_attr( $field_class ),
-			esc_attr( $field_id ),
-			$content
-		);
+		// Return the custom HTML wrapped in the unified wrapper div
+		return '<div id="ass-checkout-shipping-info-wrapper" class="ass-checkout-order-review-wrapper">' . $content . '</div>';
 	}
 
 	/**
@@ -368,45 +368,39 @@ class Checkout_Handler {
 	}
 
 	public function update_checkout_fragments( array $fragments ): array {
-		$display_location = $this->get_display_location();
+		$content = $this->get_shipping_date_content();
 		
-		if ( 'billing' === $display_location ) {
-			ob_start();
+		$allowed_html = wp_kses_allowed_html( 'post' );
+		$allowed_html['input'] = [
+			'type' => true,
+			'name' => true,
+			'value' => true,
+			'required' => true,
+			'class' => true,
+			'id' => true,
+		];
+		$allowed_html['label'] = [
+			'class' => true,
+			'for' => true,
+		];
+		$allowed_html['div'] = [
+			'id' => true,
+			'class' => true,
+		];
+		
+		ob_start();
+		?>
+		<div id="ass-checkout-shipping-info-wrapper" class="ass-checkout-order-review-wrapper">
+			<?php 
+			if ( ! empty( $content ) ) {
+				echo wp_kses( $content, $allowed_html );
+			}
 			?>
-			<div class="woocommerce-billing-fields__field-wrapper">
-					<?php
-					$checkout = WC()->checkout();
-					$fields = $checkout->get_checkout_fields('billing');
-					foreach ($fields as $key => $field) {
-						woocommerce_form_field($key, $field, $checkout->get_value($key));
-					}
-					?>
-			</div>
-			<?php
-			$fragments['.woocommerce-billing-fields__field-wrapper'] = ob_get_clean();
-		} elseif ( 'shipping' === $display_location ) {
-			ob_start();
-			?>
-			<div class="woocommerce-shipping-fields__field-wrapper">
-					<?php
-					$checkout = WC()->checkout();
-					$fields = $checkout->get_checkout_fields('shipping');
-					foreach ($fields as $key => $field) {
-						woocommerce_form_field($key, $field, $checkout->get_value($key));
-					}
-					?>
-			</div>
-			<?php
-			$fragments['.woocommerce-shipping-fields__field-wrapper'] = ob_get_clean();
-		} elseif ( 'order_review' === $display_location ) {
-			ob_start();
-			?>
-			<div class="woocommerce-checkout-review-order">
-				<?php woocommerce_order_review(); ?>
-			</div>
-			<?php
-			$fragments['.woocommerce-checkout-review-order'] = ob_get_clean();
-		}
+		</div>
+		<?php
+		
+		// Use ID selector (more specific and reliable)
+		$fragments['#ass-checkout-shipping-info-wrapper'] = ob_get_clean();
 		
 		return $fragments;
 	}

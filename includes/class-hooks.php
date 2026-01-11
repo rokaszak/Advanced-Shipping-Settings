@@ -26,9 +26,10 @@ class Hooks {
 
 		// Register custom pickup shipping methods
 		add_filter( 'woocommerce_shipping_methods', [ $this, 'register_pickup_shipping_methods' ] );
+		add_action( 'woocommerce_shipping_init', [ $this, 'init_pickup_shipping_methods' ] );
 
-		// Prepend images to shipping method labels
-		add_filter( 'woocommerce_cart_shipping_method_full_label', [ $this, 'add_images_to_labels' ], 10, 2 );
+		// Add pickup location logos to checkout shipping labels
+		add_filter( 'woocommerce_cart_shipping_method_full_label', [ $this, 'add_pickup_location_logo' ], 10, 2 );
 
 		// Checkout validation to prevent stale/cached shipping selections
 		add_action( 'woocommerce_after_checkout_validation', [ $this, 'checkout_validation' ], PHP_INT_MAX, 2 );
@@ -122,63 +123,54 @@ class Hooks {
 			if ( empty( $location['method_id'] ) ) {
 				continue;
 			}
-
-			$method_id = $location['method_id'];
-			$name      = $location['name'];
-
-			// We use a dynamic class name to avoid conflicts if needed, 
-			// but we can also just use the same class with different IDs if WC allows.
-			// WC_Shipping_Method is designed to be subclassed per method ID.
-			
-			$methods[ $method_id ] = new Pickup_Shipping_Method( 0, $method_id, $name );
+			$methods[ $location['method_id'] ] = 'ASS\Pickup_Shipping_Method_' . $location['method_id'];
 		}
 
 		return $methods;
 	}
 
 	/**
-	 * Add custom images to shipping method labels.
+	 * Initialize pickup shipping method classes.
 	 */
-	public function add_images_to_labels( string $label, $method ): string {
+	public function init_pickup_shipping_methods(): void {
+		$pickup_locations = Settings_Manager::instance()->get_pickup_locations();
+
+		foreach ( $pickup_locations as $location ) {
+			$method_id = $location['method_id'];
+			$name      = $location['name'];
+			$class_name = 'Pickup_Shipping_Method_' . $method_id;
+
+			if ( ! class_exists( 'ASS\\' . $class_name ) ) {
+				$eval_code = "namespace ASS; class $class_name extends Pickup_Shipping_Method { 
+					public function __construct(\$instance_id = 0) { 
+						parent::__construct(\$instance_id, '$method_id', '$name'); 
+					} 
+				}";
+				eval( $eval_code );
+			}
+		}
+	}
+
+	/**
+	 * Add pickup location logos to checkout shipping method labels.
+	 */
+	public function add_pickup_location_logo( string $label, $method ): string {
 		$method_id = $method->get_method_id();
-		$settings_manager = Settings_Manager::instance();
+		$pickup_locations = Settings_Manager::instance()->get_pickup_locations();
 		
+		// Check if it's a pickup location
 		$image_id = '';
-		
-		// 1. Check if it's a pickup location
-		$pickup_locations = $settings_manager->get_pickup_locations();
 		foreach ( $pickup_locations as $location ) {
 			if ( $location['method_id'] === $method_id ) {
 				$image_id = $location['image_id'] ?? '';
 				break;
 			}
 		}
-		
-		// 2. Check if it's a normal method with a custom image
-		if ( ! $image_id ) {
-			$method_images = $settings_manager->get_method_images();
-			$image_id = $method_images[ $method_id ] ?? '';
-			
-			// Try with instance ID if not found by base ID
-			if ( ! $image_id ) {
-				$full_id = $method->get_id(); // includes instance ID
-				$image_id = $method_images[ $full_id ] ?? '';
-			}
-		}
-
-		// Apply custom name if exists
-		$custom_names = $settings_manager->get_method_display_names();
-		$full_id = $method->get_id();
-		if ( ! empty( $custom_names[ $full_id ] ) ) {
-			$label = $custom_names[ $full_id ];
-		} elseif ( ! empty( $custom_names[ $method_id ] ) ) {
-			$label = $custom_names[ $method_id ];
-		}
 
 		if ( $image_id ) {
 			$image_url = wp_get_attachment_image_url( $image_id, 'thumbnail' );
 			if ( $image_url ) {
-				$icon = '<img src="' . esc_url( $image_url ) . '" class="ass-method-checkout-icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;" alt="">';
+				$icon = '<img src="' . esc_url( $image_url ) . '" class="ass-pickup-checkout-logo" style="height: 30px; width: auto; margin-right: 10px; vertical-align: middle;" alt="">';
 				return $icon . $label;
 			}
 		}

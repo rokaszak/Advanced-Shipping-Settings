@@ -45,11 +45,23 @@ jQuery(document).ready(function($) {
                     var $row = $dropzone.closest('.ass-date-row');
                     var dateIndex = $row.length ? $row.data('index') : null;
 
-                    // Check if already exists in this dropzone
-                    var alreadyExists = $dropzone.find('.ass-cat-pill[data-id="' + catId + '"]').length > 1;
-                    if (alreadyExists) {
-                        $(itemEl).remove();
-                        return;
+                    // Check if already exists in ANY dropzone for this method (if ASAP)
+                    var $card = $dropzone.closest('.ass-method-card');
+                    var isAsap = $card.find('.ass-type-toggle[value="asap"]:checked').length > 0;
+                    
+                    if (isAsap) {
+                        var alreadyExists = $card.find('.ass-category-dropzone .ass-cat-pill[data-id="' + catId + '"]').not(itemEl).length > 0;
+                        if (alreadyExists) {
+                            $(itemEl).remove();
+                            return;
+                        }
+                    } else {
+                        // For BY DATE, check only current dropzone
+                        var alreadyExists = $dropzone.find('.ass-cat-pill[data-id="' + catId + '"]').length > 1;
+                        if (alreadyExists) {
+                            $(itemEl).remove();
+                            return;
+                        }
                     }
 
                     // Replace cloned item with a proper pill + hidden input

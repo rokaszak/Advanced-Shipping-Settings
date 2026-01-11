@@ -69,8 +69,8 @@
 }
 
 .ass-method-logo {
-    max-width: 40px;
-    height: auto;
+    height: 40px;
+    width: auto;
     flex-shrink: 0;
 }
 
@@ -105,5 +105,14 @@
 .ass-asap-date {
     font-size: 14px;
     color: #444;
+}
+
+/* Pickup Location Logo in Checkout */
+.ass-pickup-checkout-logo {
+    height: 30px;
+    width: auto;
+    margin-right: 10px;
+    vertical-align: middle;
+    display: inline-block;
 }
 

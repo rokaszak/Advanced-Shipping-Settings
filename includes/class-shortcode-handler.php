@@ -63,6 +63,17 @@ class Shortcode_Handler {
 	private function product_matches_rule( array $product_cats, array $rule ): bool {
 		if ( 'asap' === $rule['type'] ) {
 			$allowed = $rule['categories'] ?? [];
+			
+			// Add categories from priority days
+			if ( ! empty( $rule['priority_days'] ) ) {
+				foreach ( $rule['priority_days'] as $p_day ) {
+					if ( ! empty( $p_day['categories'] ) ) {
+						$allowed = array_merge( $allowed, $p_day['categories'] );
+					}
+				}
+				$allowed = array_unique( $allowed );
+			}
+			
 			return ! empty( array_intersect( $product_cats, $allowed ) );
 		} elseif ( 'by_date' === $rule['type'] ) {
 			$dates = $rule['dates'] ?? [];
