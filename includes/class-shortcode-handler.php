@@ -106,7 +106,7 @@ class Shortcode_Handler {
 			
 			echo '<div class="ass-method-header-display">';
 			if ( $image_id ) {
-				$image_url = wp_get_attachment_image_url( $image_id, 'thumbnail' );
+				$image_url = wp_get_attachment_image_url( $image_id, 'medium' );
 				if ( $image_url ) {
 					echo '<img src="' . esc_url( $image_url ) . '" class="ass-method-logo" alt="' . esc_attr( $method_name ) . '">';
 				}
@@ -120,6 +120,20 @@ class Shortcode_Handler {
 				$this->render_by_date_ui( $rule, $product_cats );
 			}
 			echo '</div>';
+		}
+
+		// Add disclaimer at the bottom if enabled
+		$settings_manager = Settings_Manager::instance();
+		if ( $settings_manager->should_show_delivery_disclaimer() ) {
+			$disclaimer_text = $settings_manager->get_delivery_disclaimer_text();
+			$disclaimer_url = $settings_manager->get_delivery_disclaimer_url();
+			
+			if ( ! empty( $disclaimer_text ) && ! empty( $disclaimer_url ) ) {
+				echo '<div class="ass-delivery-disclaimer">';
+				echo '<hr class="ass-disclaimer-divider">';
+				echo '<a href="' . esc_url( $disclaimer_url ) . '" target="_blank" rel="noopener noreferrer" class="ass-disclaimer-link">' . esc_html( $disclaimer_text ) . '</a>';
+				echo '</div>';
+			}
 		}
 
 		echo '</div>';

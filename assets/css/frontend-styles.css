@@ -116,3 +116,29 @@
     display: inline-block;
 }
 
+
+.ass-disclaimer-divider {
+    margin: 15px 0 10px 0;
+    border: 0;
+    border-top: 1px solid #e5e5e5;
+    background: none;
+    height: 0;
+}
+
+.ass-disclaimer-link {
+    display: inline-block;
+    font-size: 12px;
+    color: #666;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.ass-disclaimer-link:hover {
+    color: #333;
+    text-decoration: underline;
+}
+
+.ass-disclaimer-link:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}

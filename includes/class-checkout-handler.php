@@ -100,6 +100,15 @@ class Checkout_Handler {
 			'id' => true,
 			'class' => true,
 		];
+		$allowed_html['a'] = array_merge( $allowed_html['a'] ?? [], [
+			'href' => true,
+			'target' => true,
+			'rel' => true,
+			'class' => true,
+		] );
+		$allowed_html['hr'] = [
+			'class' => true,
+		];
 
 		echo '<div id="ass-checkout-shipping-info-wrapper" class="ass-checkout-order-review-wrapper">' . wp_kses( $content, $allowed_html ) . '</div>';
 	}
@@ -156,6 +165,20 @@ class Checkout_Handler {
 			$field_html .= $this->render_asap_info_html( $rule );
 		} elseif ( 'by_date' === $rule['type'] ) {
 			$field_html .= $this->render_date_selector_html( $rule );
+		}
+
+		// Add disclaimer at the bottom if enabled
+		$settings_manager = Settings_Manager::instance();
+		if ( $settings_manager->should_show_delivery_disclaimer() ) {
+			$disclaimer_text = $settings_manager->get_delivery_disclaimer_text();
+			$disclaimer_url = $settings_manager->get_delivery_disclaimer_url();
+			
+			if ( ! empty( $disclaimer_text ) && ! empty( $disclaimer_url ) ) {
+				$field_html .= '<div class="ass-delivery-disclaimer">';
+				$field_html .= '<hr class="ass-disclaimer-divider">';
+				$field_html .= '<a href="' . esc_url( $disclaimer_url ) . '" target="_blank" rel="noopener noreferrer" class="ass-disclaimer-link">' . esc_html( $disclaimer_text ) . '</a>';
+				$field_html .= '</div>';
+			}
 		}
 
 		$field_html .= '</div>';
@@ -385,6 +408,15 @@ class Checkout_Handler {
 		];
 		$allowed_html['div'] = [
 			'id' => true,
+			'class' => true,
+		];
+		$allowed_html['a'] = array_merge( $allowed_html['a'] ?? [], [
+			'href' => true,
+			'target' => true,
+			'rel' => true,
+			'class' => true,
+		] );
+		$allowed_html['hr'] = [
 			'class' => true,
 		];
 		

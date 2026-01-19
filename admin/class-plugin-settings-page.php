@@ -221,6 +221,36 @@ class Plugin_Settings_Page {
 					?>
 				</div>
 
+				<hr>
+
+				<h2 class="title"><?php esc_html_e( 'Delivery Date Disclaimer', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Display a disclaimer link at the bottom of shipping information on product pages and checkout.', 'advanced-shipping-settings' ) ); ?></h2>
+				<table class="form-table">
+					<tr>
+						<th><label><?php esc_html_e( 'Show delivery date disclaimer:', 'advanced-shipping-settings' ); ?></label></th>
+						<td>
+							<?php
+							$show_disclaimer = $settings['show_delivery_disclaimer'] ?? false;
+							?>
+							<label>
+								<input type="checkbox" name="settings[show_delivery_disclaimer]" value="1" <?php checked( $show_disclaimer, true ); ?>>
+								<?php esc_html_e( 'Enable disclaimer', 'advanced-shipping-settings' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Disclaimer Text:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Text to display as the disclaimer link (e.g. "About shown delivery times").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[delivery_disclaimer_text]" value="<?php echo esc_attr( $settings['delivery_disclaimer_text'] ?? 'About shown delivery times' ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Disclaimer Link URL:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'URL where the disclaimer link will point to (opens in new tab).', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="url" name="settings[delivery_disclaimer_url]" value="<?php echo esc_url( $settings['delivery_disclaimer_url'] ?? '' ); ?>" class="regular-text" placeholder="https://example.com/delivery-info">
+						</td>
+					</tr>
+				</table>
+
 				<p class="submit">
 					<input type="submit" name="ass_save_settings" class="button button-primary button-large" value="<?php esc_attr_e( 'Save Settings', 'advanced-shipping-settings' ); ?>">
 				</p>
@@ -279,12 +309,15 @@ class Plugin_Settings_Page {
 
 		$raw_settings = isset( $_POST['settings'] ) ? (array) $_POST['settings'] : [];
 		$sanitized_settings = [
-			'translations'         => [],
-			'holiday_dates'        => [],
-			'hidden_methods'       => [],
-			'method_display_names' => [],
-			'method_images'        => [],
-			'display_location'     => 'billing',
+			'translations'                => [],
+			'holiday_dates'               => [],
+			'hidden_methods'              => [],
+			'method_display_names'        => [],
+			'method_images'               => [],
+			'display_location'            => 'billing',
+			'show_delivery_disclaimer'    => false,
+			'delivery_disclaimer_text'    => '',
+			'delivery_disclaimer_url'     => '',
 		];
 
 		if ( isset( $raw_settings['translations'] ) ) {
@@ -323,6 +356,18 @@ class Plugin_Settings_Page {
 			$allowed_locations = [ 'billing', 'shipping', 'order_review' ];
 			$location = sanitize_text_field( $raw_settings['display_location'] );
 			$sanitized_settings['display_location'] = in_array( $location, $allowed_locations, true ) ? $location : 'billing';
+		}
+
+		if ( isset( $raw_settings['show_delivery_disclaimer'] ) ) {
+			$sanitized_settings['show_delivery_disclaimer'] = ! empty( $raw_settings['show_delivery_disclaimer'] );
+		}
+
+		if ( isset( $raw_settings['delivery_disclaimer_text'] ) ) {
+			$sanitized_settings['delivery_disclaimer_text'] = sanitize_text_field( $raw_settings['delivery_disclaimer_text'] );
+		}
+
+		if ( isset( $raw_settings['delivery_disclaimer_url'] ) ) {
+			$sanitized_settings['delivery_disclaimer_url'] = esc_url_raw( $raw_settings['delivery_disclaimer_url'] );
 		}
 
 		Settings_Manager::instance()->save_plugin_settings( $sanitized_settings );

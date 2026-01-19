@@ -91,6 +91,30 @@ class Settings_Manager {
 	}
 
 	/**
+	 * Check if delivery date disclaimer should be shown.
+	 */
+	public function should_show_delivery_disclaimer(): bool {
+		$settings = $this->get_plugin_settings();
+		return ! empty( $settings['show_delivery_disclaimer'] );
+	}
+
+	/**
+	 * Get delivery date disclaimer text.
+	 */
+	public function get_delivery_disclaimer_text(): string {
+		$settings = $this->get_plugin_settings();
+		return $settings['delivery_disclaimer_text'] ?? 'About shown delivery times';
+	}
+
+	/**
+	 * Get delivery date disclaimer URL.
+	 */
+	public function get_delivery_disclaimer_url(): string {
+		$settings = $this->get_plugin_settings();
+		return $settings['delivery_disclaimer_url'] ?? '';
+	}
+
+	/**
 	 * Get pickup locations configuration.
 	 */
 	public function get_pickup_locations(): array {
