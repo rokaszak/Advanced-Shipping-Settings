@@ -103,34 +103,8 @@ class Checkout_Handler {
 	 * Get current shipping rule for the selected shipping method.
 	 */
 	private function get_current_shipping_rule(): ?array {
-		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
-		if ( empty( $chosen_methods ) ) {
-			return null;
-		}
-
-		$chosen_method = $chosen_methods[0];
-		
-		$packages = WC()->shipping()->get_packages();
-		if ( empty( $packages ) ) {
-			return null;
-		}
-
-		$rate = null;
-		foreach ( $packages as $pkg ) {
-			if ( ! empty( $pkg['rates'][ $chosen_method ] ) ) {
-				$rate = $pkg['rates'][ $chosen_method ];
-				break;
-			}
-		}
-
-		if ( ! $rate ) {
-			return null;
-		}
-
-		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
-		$rules = Settings_Manager::instance()->get_shipping_rules();
-		
-		return $rules[ $method_id ] ?? null;
+		$shipping_data = ass_get_current_shipping_rate_and_rule();
+		return $shipping_data ? $shipping_data['rule'] : null;
 	}
 
 	/**
@@ -185,37 +159,16 @@ class Checkout_Handler {
 	 * Get the shipping date content HTML.
 	 */
 	private function get_shipping_date_content(): string {
-		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
-		if ( empty( $chosen_methods ) ) {
+		$shipping_data = ass_get_current_shipping_rate_and_rule();
+		if ( ! $shipping_data ) {
 			return '';
 		}
 
-		$chosen_method = $chosen_methods[0];
-		
-		$packages = WC()->shipping()->get_packages();
-		if ( empty( $packages ) ) {
-			return '';
-		}
-
-		$rate = null;
-		$package = null;
-		foreach ( $packages as $pkg ) {
-			if ( ! empty( $pkg['rates'][ $chosen_method ] ) ) {
-				$rate = $pkg['rates'][ $chosen_method ];
-				$package = $pkg;
-				break;
-			}
-		}
+		$rate = $shipping_data['rate'];
+		$rule = $shipping_data['rule'];
+		$package = $shipping_data['package'];
 
 		if ( ! $rate || ! $package ) {
-			return '';
-		}
-
-		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
-		$rules = Settings_Manager::instance()->get_shipping_rules();
-		$rule = $rules[ $method_id ] ?? null;
-
-		if ( ! $rule ) {
 			return '';
 		}
 

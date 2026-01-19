@@ -29,22 +29,13 @@ class Order_Meta_Handler {
 	 * Save shipping date meta to order.
 	 */
 	public function save_shipping_date_meta( WC_Order $order, array $data ): void {
-		$shipping_methods = $order->get_shipping_methods();
-		if ( empty( $shipping_methods ) ) {
+		// Get shipping rate and rule from session/packages (order doesn't have shipping methods yet)
+		$shipping_data = ass_get_current_shipping_rate_and_rule();
+		if ( ! $shipping_data ) {
 			return;
 		}
 
-		// WC_Order_Item_Shipping
-		$shipping_method = reset( $shipping_methods );
-		
-		$method_id = $shipping_method->get_method_id() . ':' . $shipping_method->get_instance_id();
-		
-		$rules = Settings_Manager::instance()->get_shipping_rules();
-		$rule  = $rules[ $method_id ] ?? null;
-
-		if ( ! $rule ) {
-			return;
-		}
+		$rule = $shipping_data['rule'];
 
 		if ( 'asap' === $rule['type'] ) {
 			// Calculate both dates server-side (no user input, fully secure)
