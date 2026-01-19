@@ -75,6 +75,13 @@ class Settings_Manager {
 	}
 
 	/**
+	 * Get order delivery text for emails and customer order details.
+	 */
+	public function get_order_delivery_text(): string {
+		return $this->get_translation( 'order_delivery_text', 'We plan to ship to deliver by' );
+	}
+
+	/**
 	 * Get custom display names for shipping methods.
 	 */
 	public function get_method_display_names(): array {

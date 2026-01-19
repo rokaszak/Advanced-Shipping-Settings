@@ -45,6 +45,7 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-shipping-filter.php';
 		require_once ASS_PATH . 'includes/class-checkout-handler.php';
 		require_once ASS_PATH . 'includes/class-order-meta-handler.php';
+		require_once ASS_PATH . 'includes/class-order-display-handler.php';
 		require_once ASS_PATH . 'includes/class-shortcode-handler.php';
 		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
 
@@ -70,6 +71,7 @@ class Plugin_Core {
 		Date_Calculator::instance();
 		Checkout_Handler::instance();
 		Order_Meta_Handler::instance();
+		Order_Display_Handler::instance();
 		Shortcode_Handler::instance();
 
 		if ( is_admin() ) {
@@ -86,8 +88,11 @@ class Plugin_Core {
 
 	public function enqueue_frontend_assets(): void {
 		wp_enqueue_style( 'ass-frontend-styles', ASS_URL . 'assets/css/frontend-styles.css', [], ASS_VERSION );
-		wp_enqueue_script( 'ass-checkout-date-selector', ASS_URL . 'assets/js/checkout-date-selector.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
-		wp_enqueue_script( 'ass-checkout-update', ASS_URL . 'assets/js/checkout-update.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
+		
+		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
+			wp_enqueue_script( 'ass-checkout-date-selector', ASS_URL . 'assets/js/checkout-date-selector.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
+			wp_enqueue_script( 'ass-checkout-update', ASS_URL . 'assets/js/checkout-update.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
+		}
 	}
 
 	public function enqueue_admin_assets(): void {

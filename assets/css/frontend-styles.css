@@ -11,6 +11,10 @@
     border-radius: 4px;
 }
 
+.ass-checkout-shipping-info.ass-invalid {
+    border-color: #dc3232;
+}
+
 .ass-asap-date-info {
     margin: 0;
     font-size: 14px;
@@ -141,4 +145,27 @@
 .ass-disclaimer-link:focus {
     outline: 2px solid #0073aa;
     outline-offset: 2px;
+}
+
+.ass-hidden-field {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Order Details Page Styling */
+.ass-order-delivery-info {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.ass-order-delivery-info p {
+    margin: 0;
+    font-size: 14px;
 }

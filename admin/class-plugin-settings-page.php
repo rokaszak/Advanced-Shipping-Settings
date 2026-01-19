@@ -55,15 +55,27 @@ class Plugin_Settings_Page {
 						</td>
 					</tr>
 					<tr>
+						<th><label><?php esc_html_e( 'Reservation Date Field Label:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Field label used in validation errors (e.g. "Reservation date" or "Rezervacijos data").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[translations][reservation_date_label]" value="<?php echo esc_attr( $translations['reservation_date_label'] ?? 'Reservation date' ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Required Field Error Suffix:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Error message suffix for required fields (e.g. "is a required field." or "yra būtinas laukelis.").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[translations][required_field_error_suffix]" value="<?php echo esc_attr( $translations['required_field_error_suffix'] ?? 'is a required field.' ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
 						<th><label><?php esc_html_e( 'Shortcode Label:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Shown in product page for BY DATE methods (e.g. "Available to reserve:").', 'advanced-shipping-settings' ) ); ?></label></th>
 						<td>
 							<input type="text" name="settings[translations][shortcode_rezervuoti]" value="<?php echo esc_attr( $translations['shortcode_rezervuoti'] ?? 'Available to reserve:' ); ?>" class="regular-text">
 						</td>
 					</tr>
 					<tr>
-						<th><label><?php esc_html_e( 'Date Required Error:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Validation error if no date is selected during checkout.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<th><label><?php esc_html_e( 'Order Delivery Text:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Text shown in order emails and customer order details (e.g. "We plan to ship to deliver by").', 'advanced-shipping-settings' ) ); ?></label></th>
 						<td>
-							<input type="text" name="settings[translations][error_date_required]" value="<?php echo esc_attr( $translations['error_date_required'] ?? 'Please select a reservation date.' ); ?>" class="regular-text">
+							<input type="text" name="settings[translations][order_delivery_text]" value="<?php echo esc_attr( $translations['order_delivery_text'] ?? 'We plan to ship to deliver by' ); ?>" class="regular-text">
 						</td>
 					</tr>
 				</table>

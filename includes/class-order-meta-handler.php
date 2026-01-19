@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Save ASAP/reservation dates to order meta (HPOS compatible).
+ * Save ship_by_date and deliver_by_date to order meta (HPOS compatible).
  */
 class Order_Meta_Handler {
 
@@ -47,23 +47,34 @@ class Order_Meta_Handler {
 		}
 
 		if ( 'asap' === $rule['type'] ) {
-			if ( ! empty( $_POST['ass_calculated_asap_date'] ) ) {
-				$asap_date = sanitize_text_field( wp_unslash( $_POST['ass_calculated_asap_date'] ) );
-				$order->update_meta_data( 'asap_date', $asap_date );
-			} else {
-				// Fallback calculation if hidden field missing for some reason.
-				$sending_days  = $rule['sending_days'] ?? [];
-				$max_ship_days = $rule['max_ship_days'] ?? 0;
-				$holidays      = Settings_Manager::instance()->get_holiday_dates();
-				$asap_date     = Date_Calculator::instance()->calculate_asap_date( $sending_days, $max_ship_days, $holidays );
-				if ( $asap_date ) {
-					$order->update_meta_data( 'asap_date', $asap_date );
+			// Calculate both dates server-side (no user input, fully secure)
+			$holidays = Settings_Manager::instance()->get_holiday_dates();
+			
+			// Collect cart products categories
+			$products_categories = [];
+			$packages = WC()->shipping()->get_packages();
+			foreach ( $packages as $package ) {
+				foreach ( $package['contents'] as $item ) {
+					$product = $item['data'];
+					$products_categories[] = $product->get_category_ids();
 				}
 			}
+
+			$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_categories );
+			
+			if ( ! empty( $dates['ship_by_date'] ) ) {
+				$order->update_meta_data( 'ship_by_date', $dates['ship_by_date'] );
+			}
+			if ( ! empty( $dates['deliver_by_date'] ) ) {
+				$order->update_meta_data( 'deliver_by_date', $dates['deliver_by_date'] );
+			}
 		} elseif ( 'by_date' === $rule['type'] ) {
-			if ( ! empty( $_POST['reservation_date'] ) ) {
-				$reservation_date = sanitize_text_field( wp_unslash( $_POST['reservation_date'] ) );
-				$order->update_meta_data( 'reservation_date', $reservation_date );
+			// User selects deliver_by_date, ship_by_date equals deliver_by_date
+			if ( ! empty( $_POST['deliver_by_date'] ) ) {
+				$deliver_by_date = sanitize_text_field( wp_unslash( $_POST['deliver_by_date'] ) );
+				$order->update_meta_data( 'deliver_by_date', $deliver_by_date );
+				// For reservation-based methods, ship_by_date equals deliver_by_date
+				$order->update_meta_data( 'ship_by_date', $deliver_by_date );
 			}
 		}
 	}

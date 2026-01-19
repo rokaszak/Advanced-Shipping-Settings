@@ -25,7 +25,7 @@ class Checkout_Handler {
 	private function __construct() {
 		add_filter( 'woocommerce_checkout_fields', [ $this, 'add_shipping_date_field' ] );
 		add_filter( 'woocommerce_form_field_ass_custom', [ $this, 'render_custom_field' ], 10, 4 );
-		add_action( 'woocommerce_checkout_process', [ $this, 'validate_date_selection' ] );
+		add_action( 'woocommerce_after_checkout_validation', [ $this, 'validate_date_validity' ], 10, 2 );
 		add_filter( 'woocommerce_update_order_review_fragments', [ $this, 'update_checkout_fragments' ], 10, 1 );
 		add_action( 'woocommerce_review_order_before_order_total', [ $this, 'display_order_review_content' ], 5 );
 	}
@@ -46,23 +46,91 @@ class Checkout_Handler {
 	public function add_shipping_date_field( array $fields ): array {
 		$display_location = $this->get_display_location();
 		
-		// Only add to billing or shipping fields, not order_review
-		if ( 'order_review' === $display_location ) {
-			return $fields;
-		}
 
-		$field_key = 'ass_shipping_date';
-		$section = $display_location; // 'billing' or 'shipping'
+		$section = ( 'order_review' === $display_location ) ? 'billing' : $display_location;
 		
-		$fields[ $section ][ $field_key ] = [
-			'type'        => 'ass_custom',
-			'label'       => '',
-			'required'    => false,
-			'priority'    => 5, // Before name field (priority 10)
-			'class'       => [ 'form-row-wide', 'ass-shipping-date-field' ],
-		];
+		// Check if we need to register deliver_by_date as a proper WooCommerce field
+		$rule = $this->get_current_shipping_rule();
+		$available_dates = [];
+		$deliver_by_date_registered = false;
+		
+		if ( $rule && 'by_date' === $rule['type'] ) {
+			$available_dates = $this->get_available_dates_for_cart( $rule );
+			if ( ! empty( $available_dates ) ) {
+				$options = [];
+				foreach ( $available_dates as $date_info ) {
+					$options[ $date_info['date'] ] = $date_info['label'];
+				}
+				
+				$prompt = Settings_Manager::instance()->get_translation( 'reservation_prompt', 'Select a reservation date:' );
+				$field_label = Settings_Manager::instance()->get_translation( 'reservation_date_label', 'Reservation date' );
+				
+				$field_config = [
+					'type'     => 'radio',
+					'label'    => $field_label,
+					'required' => true,
+					'priority' => 5,
+					'class'    => [ 'form-row-wide', 'ass-shipping-date-field', 'validate-required' ],
+					'options'  => $options,
+				];
+				
+				// Hide the field visually when display_location is order_review (custom HTML is shown instead)
+				if ( 'order_review' === $display_location ) {
+					$field_config['class'][] = 'ass-hidden-field';
+				}
+				
+				$fields[ $section ]['deliver_by_date'] = $field_config;
+				$deliver_by_date_registered = true;
+			}
+		}
+		
+		// Only register ass_shipping_date for ASAP rules or when deliver_by_date is not registered
+		// This avoids conflicts when deliver_by_date is already registered for by_date rules
+		if ( ! $rule || 'asap' === $rule['type'] || ! $deliver_by_date_registered ) {
+			$fields[ $section ]['ass_shipping_date'] = [
+				'type'        => 'ass_custom',
+				'label'       => '',
+				'required'    => false,
+				'priority'    => 5,
+				'class'       => [ 'form-row-wide', 'ass-shipping-date-field' ],
+			];
+		}
 		
 		return $fields;
+	}
+
+	/**
+	 * Get current shipping rule for the selected shipping method.
+	 */
+	private function get_current_shipping_rule(): ?array {
+		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
+		if ( empty( $chosen_methods ) ) {
+			return null;
+		}
+
+		$chosen_method = $chosen_methods[0];
+		
+		$packages = WC()->shipping()->get_packages();
+		if ( empty( $packages ) ) {
+			return null;
+		}
+
+		$rate = null;
+		foreach ( $packages as $pkg ) {
+			if ( ! empty( $pkg['rates'][ $chosen_method ] ) ) {
+				$rate = $pkg['rates'][ $chosen_method ];
+				break;
+			}
+		}
+
+		if ( ! $rate ) {
+			return null;
+		}
+
+		$method_id = apply_filters( 'ass_shipping_method_id', $rate->method_id, $rate );
+		$rules = Settings_Manager::instance()->get_shipping_rules();
+		
+		return $rules[ $method_id ] ?? null;
 	}
 
 	/**
@@ -194,6 +262,22 @@ class Checkout_Handler {
 			return $field;
 		}
 
+		$display_location = $this->get_display_location();
+		
+		// If display_location is order_review, don't render here (it's shown via display_order_review_content())
+		if ( 'order_review' === $display_location ) {
+			return '';
+		}
+
+		// If deliver_by_date is registered as a proper WooCommerce field, don't render custom field for by_date rules
+		// (deliver_by_date is now always registered for by_date rules, so this custom field should be hidden)
+		$rule = $this->get_current_shipping_rule();
+		if ( $rule && 'by_date' === $rule['type'] ) {
+			// For by_date rules, deliver_by_date is always registered, so hide this custom field
+			// Custom HTML is shown via display_order_review_content() for order_review location
+			return '';
+		}
+
 		$content = $this->get_shipping_date_content();
 		if ( empty( $content ) ) {
 			return '';
@@ -219,18 +303,17 @@ class Checkout_Handler {
 			}
 		}
 
-		$asap_date = Date_Calculator::instance()->calculate_asap_date_with_priority( $rule, $holidays, $products_categories );
+		$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_categories );
 		
-		if ( ! $asap_date ) {
+		if ( empty( $dates['deliver_by_date'] ) ) {
 			return '';
 		}
 
 		$prefix = Settings_Manager::instance()->get_translation( 'asap_prefix', 'Delivery no later than' );
-		$formatted_date = $this->format_asap_date( $asap_date );
+		$formatted_date = $this->format_asap_date( $dates['deliver_by_date'] );
 
 		$html = '<p class="ass-asap-date-info">' . esc_html( $prefix ) . ' <strong>' . esc_html( $formatted_date ) . '</strong></p>';
-		// We'll use this hidden field to pass the calculated date to the order creation.
-		$html .= '<input type="hidden" name="ass_calculated_asap_date" value="' . esc_attr( $asap_date ) . '">';
+		// No hidden field - dates are calculated server-side at order creation for security
 		
 		return $html;
 	}
@@ -254,7 +337,7 @@ class Checkout_Handler {
 			$label = $date_info['label'];
 
 			$html .= '<label class="ass-date-option">';
-			$html .= '<input type="radio" name="reservation_date" value="' . esc_attr( $date ) . '" required> ';
+			$html .= '<input type="radio" name="deliver_by_date" value="' . esc_attr( $date ) . '" required> ';
 			$html .= esc_html( $label );
 			$html .= '</label><br>';
 		}
@@ -303,9 +386,10 @@ class Checkout_Handler {
 	}
 
 	/**
-	 * Validate date selection during checkout.
+	 * Validate that selected date is still available (prevents manipulation/race conditions).
+	 * Also validates that the field is not empty when required.
 	 */
-	public function validate_date_selection(): void {
+	public function validate_date_validity( array $data, \WP_Error $errors ): void {
 		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
 		if ( empty( $chosen_methods ) ) {
 			return;
@@ -347,22 +431,46 @@ class Checkout_Handler {
 			return;
 		}
 
-		if ( empty( $_POST['reservation_date'] ) ) {
-			$error_msg = Settings_Manager::instance()->get_translation( 'error_date_required', 'Please select a reservation date.' );
-			wc_add_notice( $error_msg, 'error' );
-		} else {
-			$selected_date = sanitize_text_field( wp_unslash( $_POST['reservation_date'] ) );
-			$available_dates = $this->get_available_dates_for_cart( $rule );
-			$is_valid = false;
-			foreach ( $available_dates as $date_info ) {
-				if ( $date_info['date'] === $selected_date ) {
-					$is_valid = true;
-					break;
-				}
+		// Get available dates to ensure field is required
+		$available_dates = $this->get_available_dates_for_cart( $rule );
+		if ( empty( $available_dates ) ) {
+			return;
+		}
+
+		// Explicitly validate that the field is not empty when required
+		$selected_date = isset( $_POST['deliver_by_date'] ) ? sanitize_text_field( wp_unslash( $_POST['deliver_by_date'] ) ) : '';
+		
+		if ( empty( $selected_date ) ) {
+			$field_label = Settings_Manager::instance()->get_translation( 'reservation_date_label', 'Reservation date' );
+			$error_suffix = Settings_Manager::instance()->get_translation( 'required_field_error_suffix', 'is a required field.' );
+			
+			// Format error message like WooCommerce: <strong>Field Label</strong> error suffix
+			// Escape user-provided strings to prevent XSS, then add HTML tags
+			$error_message = '<strong>' . esc_html( $field_label ) . '</strong> ' . esc_html( $error_suffix );
+			
+			$errors->add( 
+				'deliver_by_date_required', 
+				$error_message,
+				array( 'id' => 'deliver_by_date' )
+			);
+			return;
+		}
+
+		// Validate that the selected date is still available
+		$is_valid = false;
+		foreach ( $available_dates as $date_info ) {
+			if ( $date_info['date'] === $selected_date ) {
+				$is_valid = true;
+				break;
 			}
-			if ( ! $is_valid ) {
-				wc_add_notice( __( 'Invalid reservation date selected.', 'advanced-shipping-settings' ), 'error' );
-			}
+		}
+		
+		if ( ! $is_valid ) {
+			$errors->add( 
+				'deliver_by_date_invalid', 
+				__( 'Invalid reservation date selected.', 'advanced-shipping-settings' ),
+				array( 'id' => 'deliver_by_date' )
+			);
 		}
 	}
 

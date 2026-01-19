@@ -40,12 +40,28 @@ class Date_Calculator {
 	 * Calculate ASAP date considering priority sending days.
 	 */
 	public function calculate_asap_date_with_priority( array $rule, array $holiday_dates, array $cart_products_categories ): string {
+		$dates = $this->calculate_dates_with_priority( $rule, $holiday_dates, $cart_products_categories );
+		return $dates['deliver_by_date'] ?? '';
+	}
+
+	/**
+	 * Calculate both ship_by_date and deliver_by_date considering priority sending days.
+	 *
+	 * @param array $rule Shipping rule configuration.
+	 * @param array $holiday_dates Array of holiday dates.
+	 * @param array $cart_products_categories Array of product category arrays.
+	 * @return array Array with 'ship_by_date' and 'deliver_by_date' keys, or empty strings if calculation fails.
+	 */
+	public function calculate_dates_with_priority( array $rule, array $holiday_dates, array $cart_products_categories ): array {
 		$sending_days  = $rule['sending_days'] ?? [];
 		$max_ship_days = $rule['max_ship_days'] ?? 0;
 		$priority_days = $rule['priority_days'] ?? [];
 
 		if ( empty( $sending_days ) && empty( $priority_days ) ) {
-			return '';
+			return [
+				'ship_by_date'    => '',
+				'deliver_by_date' => '',
+			];
 		}
 
 		// 1. Calculate normal next sending day
@@ -95,13 +111,19 @@ class Date_Calculator {
 		}
 
 		if ( ! $send_out_date ) {
-			return '';
+			return [
+				'ship_by_date'    => '',
+				'deliver_by_date' => '',
+			];
 		}
 
 		// 4. Add max_ship_days
 		$delivery_date = $this->add_working_days( $send_out_date, $max_ship_days, $holiday_dates );
 		
-		return $delivery_date->format( 'Y-m-d' );
+		return [
+			'ship_by_date'    => $send_out_date->format( 'Y-m-d' ),
+			'deliver_by_date' => $delivery_date->format( 'Y-m-d' ),
+		];
 	}
 
 	/**
