@@ -164,7 +164,7 @@ class Order_Display_Handler {
 				echo "\n" . strip_tags( $disclaimer ) . "\n";
 			}
 		} else {
-			echo '<p style="color: #1e1e1e; display: block; font-family: Tahoma,Verdana,Segoe,sans-serif; font-size: 20px; font-weight: bold; line-height: 160%; margin: 0 0 18px; text-align: left;"><strong>' . esc_html( $display_text ) . '</strong></p>';
+			echo '<p style="color: #1e1e1e; display: block; font-family: Tahoma,Verdana,Segoe,sans-serif; font-size: 20px; font-weight: bold; line-height: 160%; margin: 0 0 0px; text-align: left;"><strong>' . esc_html( $display_text ) . '</strong></p>';
 			
 			// Add disclaimer if enabled
 			$disclaimer = $this->render_disclaimer( false );
@@ -254,9 +254,9 @@ class Order_Display_Handler {
 
 		if ( $use_inline_styles ) {
 			// For email compatibility
-			$html = '<div class="ass-delivery-disclaimer" style="margin-top: 10px;">';
-			$html .= '<hr class="ass-disclaimer-divider" style="margin: 15px 0 10px 0; border: 0; border-top: 1px solid #e5e5e5; background: none; height: 0;">';
-			$html .= '<a href="' . esc_url( $disclaimer_url ) . '" target="_blank" rel="noopener noreferrer" class="ass-disclaimer-link" style="display: inline-block; font-size: 12px; color: #666; text-decoration: none;">' . esc_html( $disclaimer_text ) . '</a>';
+			$html = '<div class="ass-delivery-disclaimer" style="margin-bottom: 20px;">';
+			$html .= '<hr class="ass-disclaimer-divider" style="margin: 5px 0 5px 0; border: 0; border-top: 1px solid #e5e5e5; background: none; height: 0;">';
+			$html .= '<a href="' . esc_url( $disclaimer_url ) . '" target="_blank" rel="noopener noreferrer" class="ass-disclaimer-link" style="display: inline-block; font-size: 14px; color: #666; text-decoration: none;">' . esc_html( $disclaimer_text ) . '</a>';
 			$html .= '</div>';
 		} else {
 			// For customer-facing display (use CSS classes)
