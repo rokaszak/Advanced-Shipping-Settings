@@ -122,6 +122,20 @@ class Settings_Manager {
 	}
 
 	/**
+	 * Get cart no shipping message.
+	 */
+	public function get_cart_no_shipping_message(): string {
+		return $this->get_translation( 'cart_no_shipping_message', 'The items in your cart do not have matching shipping methods and/or delivery times.' );
+	}
+
+	/**
+	 * Get checkout no shipping message.
+	 */
+	public function get_checkout_no_shipping_message(): string {
+		return $this->get_translation( 'checkout_no_shipping_message', 'No delivery methods found for your cart contents. The items in your cart do not have matching shipping methods and/or delivery times. Please contact us if you require assistance.' );
+	}
+
+	/**
 	 * Get pickup locations configuration.
 	 */
 	public function get_pickup_locations(): array {

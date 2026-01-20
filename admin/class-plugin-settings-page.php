@@ -78,6 +78,18 @@ class Plugin_Settings_Page {
 							<input type="text" name="settings[translations][order_delivery_text]" value="<?php echo esc_attr( $translations['order_delivery_text'] ?? 'We plan to ship to deliver by' ); ?>" class="regular-text">
 						</td>
 					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Cart No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on cart page when items in cart do not have matching shipping methods and/or delivery times based on category rules.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[translations][cart_no_shipping_message]" value="<?php echo esc_attr( $translations['cart_no_shipping_message'] ?? 'The items in your cart do not have matching shipping methods and/or delivery times.' ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Checkout No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on checkout page when items in cart do not have matching shipping methods and/or delivery times based on category rules.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[translations][checkout_no_shipping_message]" value="<?php echo esc_attr( $translations['checkout_no_shipping_message'] ?? 'No delivery methods found for your cart contents. The items in your cart do not have matching shipping methods and/or delivery times. Please contact us if you require assistance.' ); ?>" class="regular-text">
+						</td>
+					</tr>
 				</table>
 
 				<h3 class="title"><?php esc_html_e( 'Day Names', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Day names used in ASAP date formatting (e.g. "Monday, 2026-01-14").', 'advanced-shipping-settings' ) ); ?></h3>

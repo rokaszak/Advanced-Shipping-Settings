@@ -13,6 +13,8 @@ class Hooks {
 
 	private static $instance = null;
 
+	private $plugin_removed_all_rates = [];
+
 	public static function instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -39,6 +41,14 @@ class Hooks {
 
 		// Invalidate shipping cache when needed
 		add_action( 'init', [ $this, 'maybe_invalidate_stored_shipping_rates' ] );
+
+		// Custom messages for when plugin removes all shipping methods
+		add_filter( 'woocommerce_cart_no_shipping_available_html', [ $this, 'custom_cart_no_shipping_message' ], 10, 2 );
+		add_filter( 'woocommerce_no_shipping_available_html', [ $this, 'custom_checkout_no_shipping_message' ], 10, 1 );
+
+		// Hide checkout button on cart page when plugin removed all shipping methods
+		// Hook early to remove the default action before it fires
+		add_action( 'template_redirect', [ $this, 'maybe_hide_checkout_button' ], 5 );
 	}
 
 	/**
@@ -46,8 +56,14 @@ class Hooks {
 	 * Uses PHP_INT_MAX priority to run after all other filters.
 	 */
 	public function filter_shipping_methods( array $rates, array $package ): array {
+		$original_count = count( $rates );
 		$shipping_filter = Shipping_Filter::instance();
-		return $shipping_filter->filter_shipping_methods( $rates, $package );
+		$filtered_rates = $shipping_filter->filter_shipping_methods( $rates, $package );
+		
+		$package_key = md5( serialize( $package ) );
+		$this->plugin_removed_all_rates[ $package_key ] = ( $original_count > 0 && empty( $filtered_rates ) );
+		
+		return $filtered_rates;
 	}
 
 	/**
@@ -186,5 +202,58 @@ class Hooks {
 		// For now, no conditions that require cache invalidation
 		// But keeping this method for consistency with WPFactory pattern
 		// Could be used if we add time-based or other dynamic conditions
+	}
+
+
+	private function did_plugin_remove_all_rates(): bool {
+		// Check if any package had all rates removed by plugin
+		foreach ( $this->plugin_removed_all_rates as $removed ) {
+			if ( $removed ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public function custom_cart_no_shipping_message( string $html, string $formatted_destination ): string {
+		// Only show custom message if plugin removed all rates
+		if ( ! $this->did_plugin_remove_all_rates() ) {
+			return $html;
+		}
+
+		$message = Settings_Manager::instance()->get_cart_no_shipping_message();
+		return '<p class="ass-no-shipping-message">' . esc_html( $message ) . '</p>';
+	}
+
+	public function custom_checkout_no_shipping_message( string $html ): string {
+		// Only show custom message if plugin removed all rates
+		if ( ! $this->did_plugin_remove_all_rates() ) {
+			return $html;
+		}
+
+		$message = Settings_Manager::instance()->get_checkout_no_shipping_message();
+		return '<p class="ass-no-shipping-message">' . esc_html( $message ) . '</p>';
+	}
+
+	/**
+	 * Hide checkout button on cart page when plugin removed all shipping methods.
+	 * Called on template_redirect to ensure shipping rates have been calculated.
+	 */
+	public function maybe_hide_checkout_button(): void {
+		// Only run on cart page
+		if ( ! function_exists( 'is_cart' ) || ! is_cart() ) {
+			return;
+		}
+
+		// Force calculation of shipping rates if not already done
+		if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) {
+			WC()->cart->calculate_shipping();
+		}
+
+		// Check if plugin removed all rates and remove checkout button
+		if ( $this->did_plugin_remove_all_rates() ) {
+			// Remove the default proceed to checkout button
+			remove_action( 'woocommerce_proceed_to_checkout', 'woocommerce_button_proceed_to_checkout', 20 );
+		}
 	}
 }
