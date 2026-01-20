@@ -164,7 +164,7 @@ class Order_Display_Handler {
 				echo "\n" . strip_tags( $disclaimer ) . "\n";
 			}
 		} else {
-			echo '<p style="margin: 16px 0;"><strong>' . esc_html( $display_text ) . '</strong></p>';
+			echo '<p style="color: #1e1e1e; display: block; font-family: Tahoma,Verdana,Segoe,sans-serif; font-size: 20px; font-weight: bold; line-height: 160%; margin: 0 0 18px; text-align: left;"><strong>' . esc_html( $display_text ) . '</strong></p>';
 			
 			// Add disclaimer if enabled
 			$disclaimer = $this->render_disclaimer( false );
