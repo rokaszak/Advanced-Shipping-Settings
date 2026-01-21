@@ -64,6 +64,15 @@ class Admin_Menu {
 			'advanced-shipping-settings-pickup',
 			[ Pickup_Locations_Page::instance(), 'render' ]
 		);
+
+		add_submenu_page(
+			'advanced-shipping-settings',
+			__( 'Widgets', 'advanced-shipping-settings' ),
+			__( 'Widgets', 'advanced-shipping-settings' ),
+			'manage_woocommerce',
+			'advanced-shipping-settings-widgets',
+			[ Widgets_Page::instance(), 'render' ]
+		);
 	}
 }
 

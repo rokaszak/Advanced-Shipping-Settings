@@ -148,5 +148,38 @@ class Settings_Manager {
 	public function save_pickup_locations( array $locations ): bool {
 		return update_option( 'ass_pickup_locations', $locations );
 	}
+
+	/**
+	 * Get free shipping widget settings.
+	 */
+	public function get_widget_settings(): array {
+		$settings = $this->get_plugin_settings();
+		$widget_settings = $settings['free_shipping_widget'] ?? [];
+		
+		// Return with defaults
+		return [
+			'enabled' => ! empty( $widget_settings['enabled'] ),
+			'display_in_cart' => ! empty( $widget_settings['display_in_cart'] ),
+			'use_pre_discount' => ! empty( $widget_settings['use_pre_discount'] ),
+			'hide_no_threshold' => ! empty( $widget_settings['hide_no_threshold'] ),
+			'hide_already_free' => ! empty( $widget_settings['hide_already_free'] ),
+			'texts' => [
+				'title' => $widget_settings['texts']['title'] ?? 'Nemokamo pristatymo progresas',
+				'progress_template' => $widget_settings['texts']['progress_template'] ?? 'Iki nemokamo pristatymo trūksta {remaining} (iš {threshold}).',
+				'already_free' => $widget_settings['texts']['already_free'] ?? 'Nemokamas pristatymas jau pritaikytas!',
+				'no_threshold' => $widget_settings['texts']['no_threshold'] ?? 'Šiam pristatymo būdui nemokamo siuntimo akcija nėra taikoma',
+				'no_method' => $widget_settings['texts']['no_method'] ?? 'Pasirinkite pristatymo būdą.',
+			],
+		];
+	}
+
+	/**
+	 * Save free shipping widget settings.
+	 */
+	public function save_widget_settings( array $widget_settings ): bool {
+		$settings = $this->get_plugin_settings();
+		$settings['free_shipping_widget'] = $widget_settings;
+		return $this->save_plugin_settings( $settings );
+	}
 }
 

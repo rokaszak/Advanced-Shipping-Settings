@@ -48,12 +48,14 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-order-display-handler.php';
 		require_once ASS_PATH . 'includes/class-shortcode-handler.php';
 		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
+		require_once ASS_PATH . 'includes/class-widget-handler.php';
 
 		if ( is_admin() ) {
 			require_once ASS_PATH . 'admin/class-admin-menu.php';
 			require_once ASS_PATH . 'admin/class-shipping-rules-page.php';
 			require_once ASS_PATH . 'admin/class-plugin-settings-page.php';
 			require_once ASS_PATH . 'admin/class-pickup-locations-page.php';
+			require_once ASS_PATH . 'admin/class-widgets-page.php';
 		}
 	}
 
@@ -73,17 +75,20 @@ class Plugin_Core {
 		Order_Meta_Handler::instance();
 		Order_Display_Handler::instance();
 		Shortcode_Handler::instance();
+		Widget_Handler::instance();
 
 		if ( is_admin() ) {
 			Admin_Menu::instance();
 			Shipping_Rules_Page::instance();
 			Plugin_Settings_Page::instance();
 			Pickup_Locations_Page::instance();
+			Widgets_Page::instance();
 		}
 	}
 
 	public function register_shortcodes(): void {
 		add_shortcode( 'advanced_shipping_info', [ Shortcode_Handler::instance(), 'render_shortcode' ] );
+		add_shortcode( 'ass_free_shipping_widget', [ Shortcode_Handler::instance(), 'render_free_shipping_widget' ] );
 	}
 
 	public function enqueue_frontend_assets(): void {
@@ -98,8 +103,8 @@ class Plugin_Core {
 	public function enqueue_admin_assets(): void {
 		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 		
-		// Enqueue admin styles on both plugin pages
-		if ( 'advanced-shipping-settings' === $page || 'advanced-shipping-settings-config' === $page ) {
+		// Enqueue admin styles on plugin pages
+		if ( 'advanced-shipping-settings' === $page || 'advanced-shipping-settings-config' === $page || 'advanced-shipping-settings-widgets' === $page ) {
 			wp_enqueue_style( 'ass-admin-styles', ASS_URL . 'admin/css/admin-styles.css', [ 'woocommerce_admin_styles' ], ASS_VERSION );
 		}
 		

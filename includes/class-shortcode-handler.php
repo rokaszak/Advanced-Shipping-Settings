@@ -215,5 +215,126 @@ class Shortcode_Handler {
 
 		return $method_id_instance;
 	}
+
+	/**
+	 * Render the [ass_free_shipping_widget] shortcode.
+	 */
+	public function render_free_shipping_widget( array $atts = [] ): string {
+		$settings = Settings_Manager::instance()->get_widget_settings();
+
+		if ( ! $settings['enabled'] ) {
+			return '';
+		}
+
+		// Get current shipping method
+		$chosen_methods = WC()->session ? WC()->session->get( 'chosen_shipping_methods' ) : [];
+		$rate_id = $chosen_methods[0] ?? '';
+
+		// Get widget HTML from handler
+		$widget_handler = Widget_Handler::instance();
+		$html = $widget_handler->get_widget_html( $rate_id );
+
+		// Add inline JavaScript for AJAX updates
+		$script_id = 'ass-free-shipping-widget-' . uniqid();
+		$ajax_url = $this->get_ajax_url();
+
+		ob_start();
+		?>
+		<div id="<?php echo esc_attr( $script_id ); ?>-container">
+			<?php echo $html; ?>
+		</div>
+		<script type="text/javascript">
+		(function($) {
+			'use strict';
+			
+			var container = $('#<?php echo esc_js( $script_id ); ?>-container');
+			if (!container.length) return;
+			
+			var ajaxUrl = '<?php echo esc_js( $ajax_url ); ?>';
+			var xhr = null;
+			
+			function refreshWidget() {
+				if (xhr) {
+					xhr.abort();
+				}
+				
+				// Always get fresh reference to widget (it might have been removed/hidden)
+				var widget = container.find('.ass-free-shipping-widget');
+				
+				var selectedMethod = $('input[name^="shipping_method["]:checked').val() || '';
+				if (!selectedMethod && typeof wc_cart_fragments_params !== 'undefined') {
+					var chosenMethods = wc_cart_fragments_params.chosen_shipping_methods || [];
+					selectedMethod = chosenMethods[0] || '';
+				}
+				
+				var params = selectedMethod ? { rate_id: selectedMethod } : {};
+				var url = ajaxUrl + (ajaxUrl.indexOf('?') > -1 ? '&' : '?') + $.param(params);
+				
+				// Add loading class if widget exists
+				if (widget.length) {
+					widget.addClass('ass-free-shipping-widget--loading');
+				}
+				
+				xhr = $.ajax({
+					type: 'GET',
+					url: url,
+					success: function(response) {
+						if (response && response.success && response.data) {
+							if (response.data.html && response.data.html.trim()) {
+								// Widget HTML returned - replace or append
+								if (widget.length) {
+									widget.replaceWith(response.data.html);
+								} else {
+									// Widget was removed, append new one
+									container.html(response.data.html);
+								}
+								// Get fresh reference to new widget
+								widget = container.find('.ass-free-shipping-widget');
+								if (widget.length) {
+									widget.show(); // Ensure it's visible
+								}
+							} else {
+								// Empty HTML - hide or remove widget
+								if (widget.length) {
+									widget.hide();
+								}
+							}
+						}
+					},
+					error: function() {
+						// Silently fail - widget stays as is
+					},
+					complete: function() {
+						// Get fresh reference and remove loading class
+						widget = container.find('.ass-free-shipping-widget');
+						if (widget.length) {
+							widget.removeClass('ass-free-shipping-widget--loading');
+						}
+						xhr = null;
+					}
+				});
+			}
+			
+			// Listen to cart/checkout update events
+			$(document.body).on('updated_cart_totals updated_checkout wc_fragments_refreshed applied_coupon removed_coupon added_to_cart removed_from_cart', refreshWidget);
+			
+			// Listen to shipping method changes
+			$(document.body).on('change', 'input[name^="shipping_method["]', refreshWidget);
+			
+			// Initial refresh after a short delay to ensure cart is loaded
+			setTimeout(refreshWidget, 500);
+		})(jQuery);
+		</script>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Get AJAX URL for widget updates.
+	 */
+	private function get_ajax_url(): string {
+		// Use WooCommerce AJAX endpoint
+		return home_url( '/?wc-ajax=ass_free_shipping_widget' );
+	}
 }
 

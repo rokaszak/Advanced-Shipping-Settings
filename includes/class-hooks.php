@@ -47,6 +47,9 @@ class Hooks {
 		// Hide checkout button on cart page when plugin removed all shipping methods
 		// Hook after shipping is calculated but before the button is rendered
 		add_action( 'woocommerce_cart_totals_after_shipping', [ $this, 'maybe_hide_checkout_button' ], 5 );
+
+		// Display free shipping widget on cart page if enabled
+		add_action( 'woocommerce_cart_totals_after_shipping', [ $this, 'display_free_shipping_widget_in_cart' ], 10 );
 	}
 
 	/**
@@ -272,6 +275,48 @@ class Hooks {
 		if ( $this->should_show_custom_no_shipping() ) {
 			// Remove the default proceed to checkout button
 			remove_action( 'woocommerce_proceed_to_checkout', 'woocommerce_button_proceed_to_checkout', 20 );
+		}
+	}
+
+	public function display_free_shipping_widget_in_cart(): void {
+		// Only run on cart page
+		if ( ! function_exists( 'is_cart' ) || ! is_cart() ) {
+			return;
+		}
+
+		$settings = Settings_Manager::instance()->get_widget_settings();
+		
+		// Check if widget is enabled and display_in_cart is enabled
+		if ( ! $settings['enabled'] || ! $settings['display_in_cart'] ) {
+			return;
+		}
+
+		$current_filter = current_filter();
+		$table_hooks = [
+			'woocommerce_cart_totals_before_shipping',
+			'woocommerce_cart_totals_after_shipping',
+			'woocommerce_cart_totals_before_order_total',
+			'woocommerce_cart_totals_after_order_total',
+		];
+		
+		$is_inside_table = in_array( $current_filter, $table_hooks, true );
+		
+		// Render the widget using the shortcode handler
+		$shortcode_handler = Shortcode_Handler::instance();
+		$widget_html = $shortcode_handler->render_free_shipping_widget();
+		
+		if ( empty( $widget_html ) ) {
+			return;
+		}
+		
+		// Wrap in table row if inside table
+		if ( $is_inside_table ) {
+			echo '<tr><td colspan="2">';
+			echo $widget_html;
+			echo '</td></tr>';
+		} else {
+			// Outside table, can use div directly
+			echo $widget_html;
 		}
 	}
 }
