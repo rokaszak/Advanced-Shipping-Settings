@@ -316,7 +316,7 @@ class Shortcode_Handler {
 			}
 			
 			// Listen to cart/checkout update events
-			$(document.body).on('updated_cart_totals updated_checkout wc_fragments_refreshed applied_coupon removed_coupon added_to_cart removed_from_cart', refreshWidget);
+			$(document.body).on('updated_checkout wc_fragments_refreshed', refreshWidget);
 			
 			// Listen to shipping method changes
 			$(document.body).on('change', 'input[name^="shipping_method["]', refreshWidget);
