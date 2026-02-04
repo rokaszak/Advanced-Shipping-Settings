@@ -79,13 +79,13 @@ class Plugin_Settings_Page {
 						</td>
 					</tr>
 					<tr>
-						<th><label><?php esc_html_e( 'Cart No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on cart page when items in cart do not have matching shipping methods and/or delivery times based on category rules.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<th><label><?php esc_html_e( 'Cart No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on cart page when items in cart do not have matching shipping methods and/or delivery times based on tag rules.', 'advanced-shipping-settings' ) ); ?></label></th>
 						<td>
 							<input type="text" name="settings[translations][cart_no_shipping_message]" value="<?php echo esc_attr( $translations['cart_no_shipping_message'] ?? 'The items in your cart do not have matching shipping methods and/or delivery times.' ); ?>" class="regular-text">
 						</td>
 					</tr>
 					<tr>
-						<th><label><?php esc_html_e( 'Checkout No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on checkout page when items in cart do not have matching shipping methods and/or delivery times based on category rules.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<th><label><?php esc_html_e( 'Checkout No Shipping Message:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Message shown on checkout page when items in cart do not have matching shipping methods and/or delivery times based on tag rules.', 'advanced-shipping-settings' ) ); ?></label></th>
 						<td>
 							<input type="text" name="settings[translations][checkout_no_shipping_message]" value="<?php echo esc_attr( $translations['checkout_no_shipping_message'] ?? 'No delivery methods found for your cart contents. The items in your cart do not have matching shipping methods and/or delivery times. Please contact us if you require assistance.' ); ?>" class="regular-text">
 						</td>

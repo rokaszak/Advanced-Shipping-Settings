@@ -40,18 +40,18 @@ class Order_Meta_Handler {
 		if ( 'asap' === $rule['type'] ) {
 			// Calculate both dates server-side (no user input, fully secure)
 			$holidays = Settings_Manager::instance()->get_holiday_dates();
-			
-			// Collect cart products categories
-			$products_categories = [];
+
+			// Collect cart products tags
+			$products_tags = [];
 			$packages = WC()->shipping()->get_packages();
 			foreach ( $packages as $package ) {
 				foreach ( $package['contents'] as $item ) {
 					$product = $item['data'];
-					$products_categories[] = $product->get_category_ids();
+					$products_tags[] = $product->get_tag_ids();
 				}
 			}
 
-			$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_categories );
+			$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_tags );
 			
 			if ( ! empty( $dates['ship_by_date'] ) ) {
 				$order->update_meta_data( 'ship_by_date', $dates['ship_by_date'] );

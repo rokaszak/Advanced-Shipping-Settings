@@ -245,18 +245,18 @@ class Checkout_Handler {
 	 */
 	private function render_asap_info_html( array $rule ): string {
 		$holidays = Settings_Manager::instance()->get_holiday_dates();
-		
-		// Collect cart products categories
-		$products_categories = [];
+
+		// Collect cart products tags
+		$products_tags = [];
 		$packages = WC()->shipping()->get_packages();
 		foreach ( $packages as $package ) {
 			foreach ( $package['contents'] as $item ) {
 				$product = $item['data'];
-				$products_categories[] = $product->get_category_ids();
+				$products_tags[] = $product->get_tag_ids();
 			}
 		}
 
-		$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_categories );
+		$dates = Date_Calculator::instance()->calculate_dates_with_priority( $rule, $holidays, $products_tags );
 		
 		if ( empty( $dates['deliver_by_date'] ) ) {
 			return '';
@@ -307,12 +307,12 @@ class Checkout_Handler {
 		$dates = $rule['dates'] ?? [];
 		$available_dates = [];
 
-		$products_categories = [];
+		$products_tags = [];
 		$packages = WC()->shipping()->get_packages();
 		foreach ( $packages as $package ) {
 			foreach ( $package['contents'] as $item ) {
 				$product = $item['data']; // WC_Product object from package
-				$products_categories[] = $product->get_category_ids();
+				$products_tags[] = $product->get_tag_ids();
 			}
 		}
 
@@ -321,10 +321,10 @@ class Checkout_Handler {
 				continue;
 			}
 
-			$date_categories = $date_info['categories'] ?? [];
+			$date_tags = $date_info['tags'] ?? [];
 			$match_all = true;
-			foreach ( $products_categories as $product_cats ) {
-				if ( empty( $product_cats ) || empty( array_intersect( $product_cats, $date_categories ) ) ) {
+			foreach ( $products_tags as $product_tag_ids ) {
+				if ( empty( $product_tag_ids ) || empty( array_intersect( $product_tag_ids, $date_tags ) ) ) {
 					$match_all = false;
 					break;
 				}

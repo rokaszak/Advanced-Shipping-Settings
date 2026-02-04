@@ -11,14 +11,14 @@ jQuery(document).ready(function($) {
         $card.find('.ass-pane-' + type).removeClass('hidden');
     });
 
-    // Initialize Sortable for category source and dropzones
+    // Initialize Sortable for tag source and dropzones
     function initSortable() {
         // Source list (copying instead of moving)
-        var sourceList = $('.ass-category-source')[0];
+        var sourceList = $('.ass-tag-source')[0];
         if (sourceList && !$(sourceList).data('sortable-initialized')) {
             new Sortable(sourceList, {
                 group: {
-                    name: 'categories',
+                    name: 'tags',
                     pull: 'clone',
                     put: false
                 },
@@ -29,17 +29,17 @@ jQuery(document).ready(function($) {
         }
 
         // Dropzones
-        $('.ass-category-dropzone').each(function() {
+        $('.ass-tag-dropzone').each(function() {
             var $dropzone = $(this);
             if ($dropzone.data('sortable-initialized')) return;
 
             new Sortable(this, {
-                group: 'categories',
+                group: 'tags',
                 animation: 150,
                 onAdd: function(evt) {
                     var itemEl = evt.item;
-                    var catId = $(itemEl).data('id');
-                    var catName = $(itemEl).text().trim();
+                    var tagId = $(itemEl).data('id');
+                    var tagName = $(itemEl).text().trim();
                     var type = $dropzone.data('type');
                     var methodId = $dropzone.data('method-id');
                     var $row = $dropzone.closest('.ass-date-row');
@@ -48,16 +48,16 @@ jQuery(document).ready(function($) {
                     // Check if already exists in ANY dropzone for this method (if ASAP)
                     var $card = $dropzone.closest('.ass-method-card');
                     var isAsap = $card.find('.ass-type-toggle[value="asap"]:checked').length > 0;
-                    
+
                     if (isAsap) {
-                        var alreadyExists = $card.find('.ass-category-dropzone .ass-cat-pill[data-id="' + catId + '"]').not(itemEl).length > 0;
+                        var alreadyExists = $card.find('.ass-tag-dropzone .ass-tag-pill[data-id="' + tagId + '"]').not(itemEl).length > 0;
                         if (alreadyExists) {
                             $(itemEl).remove();
                             return;
                         }
                     } else {
                         // For BY DATE, check only current dropzone
-                        var alreadyExists = $dropzone.find('.ass-cat-pill[data-id="' + catId + '"]').length > 1;
+                        var alreadyExists = $dropzone.find('.ass-tag-pill[data-id="' + tagId + '"]').length > 1;
                         if (alreadyExists) {
                             $(itemEl).remove();
                             return;
@@ -67,18 +67,18 @@ jQuery(document).ready(function($) {
                     // Replace cloned item with a proper pill + hidden input
                     var inputName = '';
                     if (type === 'asap') {
-                        inputName = 'rules[' + methodId + '][categories][]';
+                        inputName = 'rules[' + methodId + '][tags][]';
                     } else if (type === 'priority_day') {
                         var pIndex = $(itemEl).closest('.ass-priority-day-row').data('index');
-                        inputName = 'rules[' + methodId + '][priority_days][' + pIndex + '][categories][]';
+                        inputName = 'rules[' + methodId + '][priority_days][' + pIndex + '][tags][]';
                     } else {
-                        inputName = 'rules[' + methodId + '][dates][' + dateIndex + '][categories][]';
+                        inputName = 'rules[' + methodId + '][dates][' + dateIndex + '][tags][]';
                     }
 
-                    var pillHtml = '<div class="ass-cat-pill" data-id="' + catId + '">' +
-                        '<span>' + catName + '</span>' +
-                        '<input type="hidden" name="' + inputName + '" value="' + catId + '">' +
-                        '<span class="remove-cat">×</span>' +
+                    var pillHtml = '<div class="ass-tag-pill" data-id="' + tagId + '">' +
+                        '<span>' + tagName + '</span>' +
+                        '<input type="hidden" name="' + inputName + '" value="' + tagId + '">' +
+                        '<span class="remove-tag">×</span>' +
                         '</div>';
 
                     $(itemEl).replaceWith(pillHtml);
@@ -90,9 +90,9 @@ jQuery(document).ready(function($) {
 
     initSortable();
 
-    // Remove category pill
-    $(document).on('click', '.remove-cat', function() {
-        $(this).closest('.ass-cat-pill').remove();
+    // Remove tag pill
+    $(document).on('click', '.remove-tag', function() {
+        $(this).closest('.ass-tag-pill').remove();
     });
 
     // Add Date Row
@@ -111,7 +111,7 @@ jQuery(document).ready(function($) {
 
     // Remove Date Row
     $(document).on('click', '.remove-date-row', function() {
-        if (confirm('Are you sure you want to remove this date and its categories?')) {
+        if (confirm('Are you sure you want to remove this date and its tags?')) {
             $(this).closest('.ass-date-row').remove();
         }
     });
@@ -132,7 +132,7 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on('click', '.remove-priority-day-row', function() {
-        if (confirm('Are you sure you want to remove this priority day and its categories?')) {
+        if (confirm('Are you sure you want to remove this priority day and its tags?')) {
             $(this).closest('.ass-priority-day-row').remove();
         }
     });

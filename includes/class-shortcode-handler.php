@@ -31,8 +31,8 @@ class Shortcode_Handler {
 			return '';
 		}
 
-		$product_cats = $product->get_category_ids();
-		if ( empty( $product_cats ) ) {
+		$product_tags = $product->get_tag_ids();
+		if ( empty( $product_tags ) ) {
 			return '';
 		}
 
@@ -43,7 +43,7 @@ class Shortcode_Handler {
 
 		$matching_methods = [];
 		foreach ( $rules as $method_id => $rule ) {
-			if ( $this->product_matches_rule( $product_cats, $rule ) ) {
+			if ( $this->product_matches_rule( $product_tags, $rule ) ) {
 				$matching_methods[ $method_id ] = $rule;
 			}
 		}
@@ -53,36 +53,36 @@ class Shortcode_Handler {
 		}
 
 		ob_start();
-		$this->render_ui( $matching_methods, $product_cats );
+		$this->render_ui( $matching_methods, $product_tags );
 		return ob_get_clean();
 	}
 
 	/**
 	 * Check if a product matches a shipping method rule.
 	 */
-	private function product_matches_rule( array $product_cats, array $rule ): bool {
+	private function product_matches_rule( array $product_tags, array $rule ): bool {
 		if ( 'asap' === $rule['type'] ) {
-			$allowed = $rule['categories'] ?? [];
-			
-			// Add categories from priority days
+			$allowed = $rule['tags'] ?? [];
+
+			// Add tags from priority days
 			if ( ! empty( $rule['priority_days'] ) ) {
 				foreach ( $rule['priority_days'] as $p_day ) {
-					if ( ! empty( $p_day['categories'] ) ) {
-						$allowed = array_merge( $allowed, $p_day['categories'] );
+					if ( ! empty( $p_day['tags'] ) ) {
+						$allowed = array_merge( $allowed, $p_day['tags'] );
 					}
 				}
 				$allowed = array_unique( $allowed );
 			}
-			
-			return ! empty( array_intersect( $product_cats, $allowed ) );
+
+			return ! empty( array_intersect( $product_tags, $allowed ) );
 		} elseif ( 'by_date' === $rule['type'] ) {
 			$dates = $rule['dates'] ?? [];
 			foreach ( $dates as $date_info ) {
 				if ( ! Shipping_Filter::instance()->is_date_visible( $date_info ) ) {
 					continue;
 				}
-				$allowed = $date_info['categories'] ?? [];
-				if ( ! empty( array_intersect( $product_cats, $allowed ) ) ) {
+				$allowed = $date_info['tags'] ?? [];
+				if ( ! empty( array_intersect( $product_tags, $allowed ) ) ) {
 					return true;
 				}
 			}
@@ -93,7 +93,7 @@ class Shortcode_Handler {
 	/**
 	 * Render the UI for matching methods.
 	 */
-	private function render_ui( array $methods, array $product_cats ): void {
+	private function render_ui( array $methods, array $product_tags ): void {
 		echo '<div class="ass-shipping-info">';
 		
 		$method_images = Settings_Manager::instance()->get_method_images();
@@ -115,9 +115,9 @@ class Shortcode_Handler {
 			echo '</div>';
 
 			if ( 'asap' === $rule['type'] ) {
-				$this->render_asap_ui( $rule, $product_cats );
+				$this->render_asap_ui( $rule, $product_tags );
 			} else {
-				$this->render_by_date_ui( $rule, $product_cats );
+				$this->render_by_date_ui( $rule, $product_tags );
 			}
 			echo '</div>';
 		}
@@ -142,9 +142,9 @@ class Shortcode_Handler {
 	/**
 	 * Render ASAP info.
 	 */
-	private function render_asap_ui( array $rule, array $product_cats ): void {
+	private function render_asap_ui( array $rule, array $product_tags ): void {
 		$holidays      = Settings_Manager::instance()->get_holiday_dates();
-		$asap_date     = Date_Calculator::instance()->calculate_asap_date_with_priority( $rule, $holidays, [ $product_cats ] );
+		$asap_date     = Date_Calculator::instance()->calculate_asap_date_with_priority( $rule, $holidays, [ $product_tags ] );
 
 		if ( ! $asap_date ) {
 			return;
@@ -159,7 +159,7 @@ class Shortcode_Handler {
 	/**
 	 * Render BY DATE info.
 	 */
-	private function render_by_date_ui( array $rule, array $product_cats ): void {
+	private function render_by_date_ui( array $rule, array $product_tags ): void {
 		$dates = $rule['dates'] ?? [];
 		$available_dates = [];
 
@@ -167,8 +167,8 @@ class Shortcode_Handler {
 			if ( ! Shipping_Filter::instance()->is_date_visible( $date_info ) ) {
 				continue;
 			}
-			$allowed = $date_info['categories'] ?? [];
-			if ( ! empty( array_intersect( $product_cats, $allowed ) ) ) {
+			$allowed = $date_info['tags'] ?? [];
+			if ( ! empty( array_intersect( $product_tags, $allowed ) ) ) {
 				$available_dates[] = $date_info;
 			}
 		}
@@ -240,7 +240,7 @@ class Shortcode_Handler {
 
 		ob_start();
 		?>
-		<div id="<?php echo esc_attr( $script_id ); ?>-container">
+		<div id="<?php echo esc_attr( $script_id ); ?>-container" class="ass-free-shipping-widget-container">
 			<?php echo $html; ?>
 		</div>
 		<script type="text/javascript">

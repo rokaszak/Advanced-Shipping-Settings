@@ -39,8 +39,8 @@ class Date_Calculator {
 	/**
 	 * Calculate ASAP date considering priority sending days.
 	 */
-	public function calculate_asap_date_with_priority( array $rule, array $holiday_dates, array $cart_products_categories ): string {
-		$dates = $this->calculate_dates_with_priority( $rule, $holiday_dates, $cart_products_categories );
+	public function calculate_asap_date_with_priority( array $rule, array $holiday_dates, array $cart_products_tags ): string {
+		$dates = $this->calculate_dates_with_priority( $rule, $holiday_dates, $cart_products_tags );
 		return $dates['deliver_by_date'] ?? '';
 	}
 
@@ -49,10 +49,10 @@ class Date_Calculator {
 	 *
 	 * @param array $rule Shipping rule configuration.
 	 * @param array $holiday_dates Array of holiday dates.
-	 * @param array $cart_products_categories Array of product category arrays.
+	 * @param array $cart_products_tags Array of product tag arrays.
 	 * @return array Array with 'ship_by_date' and 'deliver_by_date' keys, or empty strings if calculation fails.
 	 */
-	public function calculate_dates_with_priority( array $rule, array $holiday_dates, array $cart_products_categories ): array {
+	public function calculate_dates_with_priority( array $rule, array $holiday_dates, array $cart_products_tags ): array {
 		$sending_days  = $rule['sending_days'] ?? [];
 		$max_ship_days = $rule['max_ship_days'] ?? 0;
 		$priority_days = $rule['priority_days'] ?? [];
@@ -72,16 +72,16 @@ class Date_Calculator {
 			$send_out_date = $this->get_next_sending_day( $now, $sending_days, $holiday_dates );
 		}
 
-		// 2. Check for priority days matching cart categories
+		// 2. Check for priority days matching cart tags
 		$latest_priority_date = null;
 		foreach ( $priority_days as $p_day ) {
-			if ( empty( $p_day['date'] ) || empty( $p_day['categories'] ) ) {
+			if ( empty( $p_day['date'] ) || empty( $p_day['tags'] ) ) {
 				continue;
 			}
-			
+
 			$match = false;
-			foreach ( $cart_products_categories as $product_cats ) {
-				if ( ! empty( array_intersect( (array) $product_cats, (array) $p_day['categories'] ) ) ) {
+			foreach ( $cart_products_tags as $product_tag_ids ) {
+				if ( ! empty( array_intersect( (array) $product_tag_ids, (array) $p_day['tags'] ) ) ) {
 					$match = true;
 					break;
 				}

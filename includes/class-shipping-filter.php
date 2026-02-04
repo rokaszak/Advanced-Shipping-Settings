@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Filter available shipping methods based on cart categories.
+ * Filter available shipping methods based on cart tags.
  * Modeled after WPFactory's shipping filtering approach.
  */
 class Shipping_Filter {
@@ -60,13 +60,13 @@ class Shipping_Filter {
 			return [ 'res' => true, 'hide_reason' => false ];
 		}
 
-		// Get cart categories for validation
-		$products_categories = $this->get_cart_categories( $package );
+		// Get cart tags for validation
+		$products_tags = $this->get_cart_tags( $package );
 
-		if ( ! $this->is_method_available_for_products( $method_rule, $products_categories ) ) {
+		if ( ! $this->is_method_available_for_products( $method_rule, $products_tags ) ) {
 			return [
 				'res' => false,
-				'hide_reason' => 'category_mismatch'
+				'hide_reason' => 'tag_mismatch'
 			];
 		}
 
@@ -74,48 +74,48 @@ class Shipping_Filter {
 	}
 
 	/**
-	 * Get categories from all products in the cart.
+	 * Get tags from all products in the cart.
 	 */
-	private function get_cart_categories( array $package ): array {
-		$products_categories = [];
+	private function get_cart_tags( array $package ): array {
+		$products_tags = [];
 		foreach ( $package['contents'] as $item ) {
 			$product = $item['data']; // WC_Product object from package
-			$product_cats = $product->get_category_ids(); // WooCommerce method
-			if ( empty( $product_cats ) ) {
-				$products_categories[] = [];
+			$product_tags = $product->get_tag_ids();
+			if ( empty( $product_tags ) ) {
+				$products_tags[] = [];
 			} else {
-				$products_categories[] = $product_cats;
+				$products_tags[] = $product_tags;
 			}
 		}
-		return $products_categories;
+		return $products_tags;
 	}
 
 	/**
 	 * Check if a method is available for the given products.
 	 */
-	private function is_method_available_for_products( array $rule, array $products_categories ): bool {
+	private function is_method_available_for_products( array $rule, array $products_tags ): bool {
 		if ( 'asap' === $rule['type'] ) {
-			$allowed_categories = $rule['categories'] ?? [];
-			
-			// Add categories from priority days
+			$allowed_tags = $rule['tags'] ?? [];
+
+			// Add tags from priority days
 			if ( ! empty( $rule['priority_days'] ) ) {
 				foreach ( $rule['priority_days'] as $p_day ) {
-					if ( ! empty( $p_day['categories'] ) ) {
-						$allowed_categories = array_merge( $allowed_categories, $p_day['categories'] );
+					if ( ! empty( $p_day['tags'] ) ) {
+						$allowed_tags = array_merge( $allowed_tags, $p_day['tags'] );
 					}
 				}
-				$allowed_categories = array_unique( $allowed_categories );
+				$allowed_tags = array_unique( $allowed_tags );
 			}
-			
-			return $this->all_products_match_categories( $allowed_categories, $products_categories );
+
+			return $this->all_products_match_tags( $allowed_tags, $products_tags );
 		} elseif ( 'by_date' === $rule['type'] ) {
 			$dates = $rule['dates'] ?? [];
 			foreach ( $dates as $date_info ) {
 				if ( ! $this->is_date_visible( $date_info ) ) {
 					continue;
 				}
-				$date_categories = $date_info['categories'] ?? [];
-				if ( $this->all_products_match_categories( $date_categories, $products_categories ) ) {
+				$date_tags = $date_info['tags'] ?? [];
+				if ( $this->all_products_match_tags( $date_tags, $products_tags ) ) {
 					return true; // At least one date works for all products.
 				}
 			}
@@ -124,18 +124,18 @@ class Shipping_Filter {
 	}
 
 	/**
-	 * Check if all products match at least one of the allowed categories.
+	 * Check if all products match at least one of the allowed tags.
 	 */
-	private function all_products_match_categories( array $allowed_categories, array $products_categories ): bool {
-		if ( empty( $allowed_categories ) ) {
+	private function all_products_match_tags( array $allowed_tags, array $products_tags ): bool {
+		if ( empty( $allowed_tags ) ) {
 			return false;
 		}
-		foreach ( $products_categories as $product_cats ) {
-			if ( empty( $product_cats ) ) {
+		foreach ( $products_tags as $product_tag_ids ) {
+			if ( empty( $product_tag_ids ) ) {
 				return false;
 			}
-			// "it needs just ONE of its categories to be included in a shipping method"
-			$matches = array_intersect( $product_cats, $allowed_categories );
+			// "it needs just ONE of its tags to be included in a shipping method"
+			$matches = array_intersect( $product_tag_ids, $allowed_tags );
 			if ( empty( $matches ) ) {
 				return false;
 			}
@@ -149,13 +149,13 @@ class Shipping_Filter {
 	public function is_date_visible( array $date_info ): bool {
 		$reservation_date = $date_info['date'] ?? '';
 		$show_until       = $date_info['show_until'] ?? '';
-		
+
 		if ( empty( $reservation_date ) ) {
 			return false;
 		}
 
 		$now_str = current_datetime()->format( 'Y-m-d' );
-		
+
 		// Date is hidden as soon as it's reached.
 		if ( $now_str >= $reservation_date ) {
 			return false;
@@ -169,4 +169,3 @@ class Shipping_Filter {
 		return true;
 	}
 }
-

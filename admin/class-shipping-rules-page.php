@@ -30,7 +30,7 @@ class Shipping_Rules_Page {
 		}
 
 		$shipping_methods = $this->get_available_shipping_methods();
-		$categories       = $this->get_all_product_categories();
+		$tags             = $this->get_all_product_tags();
 		$current_rules    = Settings_Manager::instance()->get_shipping_rules();
 
 		?>
@@ -81,25 +81,25 @@ class Shipping_Rules_Page {
 												<input type="number" name="rules[<?php echo esc_attr( $method_id ); ?>][max_ship_days]" value="<?php echo esc_attr( $rule['max_ship_days'] ?? 0 ); ?>" min="0" class="small-text">
 											</div>
 											<div class="ass-field">
-												<label><?php esc_html_e( 'Categories:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Drag and drop categories here for normal ASAP shipping calculation.', 'advanced-shipping-settings' ) ); ?></label>
-												<div class="ass-category-dropzone sortable-list" data-type="asap" data-method-id="<?php echo esc_attr( $method_id ); ?>">
-													<?php 
-													$saved_cats = $rule['categories'] ?? [];
-													foreach ( $saved_cats as $cat_id ) : 
-														$term = get_term( $cat_id, 'product_cat' );
+												<label><?php esc_html_e( 'Tags:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Drag and drop tags here for normal ASAP shipping calculation.', 'advanced-shipping-settings' ) ); ?></label>
+												<div class="ass-tag-dropzone sortable-list" data-type="asap" data-method-id="<?php echo esc_attr( $method_id ); ?>">
+													<?php
+													$saved_tags = $rule['tags'] ?? [];
+													foreach ( $saved_tags as $tag_id ) :
+														$term = get_term( $tag_id, 'product_tag' );
 														if ( ! $term || is_wp_error( $term ) ) continue;
 														?>
-														<div class="ass-cat-pill" data-id="<?php echo esc_attr( $cat_id ); ?>">
+														<div class="ass-tag-pill" data-id="<?php echo esc_attr( $tag_id ); ?>">
 															<?php echo esc_html( $term->name ); ?>
-															<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][categories][]" value="<?php echo esc_attr( $cat_id ); ?>">
-															<span class="remove-cat">×</span>
+															<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][tags][]" value="<?php echo esc_attr( $tag_id ); ?>">
+															<span class="remove-tag">×</span>
 														</div>
 													<?php endforeach; ?>
 												</div>
 											</div>
 
 											<div class="ass-field">
-												<label><?php esc_html_e( 'Priority Sending Days:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Add specific dates that override normal sending days for selected categories. If a cart contains items matching a priority day, the LATEST matching priority date (or normal date) will be used as the send-out date.', 'advanced-shipping-settings' ) ); ?></label>
+												<label><?php esc_html_e( 'Priority Sending Days:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Add specific dates that override normal sending days for selected tags. If a cart contains items matching a priority day, the LATEST matching priority date (or normal date) will be used as the send-out date.', 'advanced-shipping-settings' ) ); ?></label>
 												<div class="ass-priority-days-repeater" data-method-id="<?php echo esc_attr( $method_id ); ?>">
 													<div class="ass-priority-days-container">
 														<?php 
@@ -122,18 +122,18 @@ class Shipping_Rules_Page {
 																	<button type="button" class="button remove-priority-day-row">×</button>
 																</div>
 																<div class="ass-field">
-																	<label><?php esc_html_e( 'Categories for this priority day:', 'advanced-shipping-settings' ); ?></label>
-																	<div class="ass-category-dropzone sortable-list" data-type="priority_day" data-method-id="<?php echo esc_attr( $method_id ); ?>">
-																		<?php 
-																		$p_cats = $p_day['categories'] ?? [];
-																		foreach ( $p_cats as $cat_id ) : 
-																			$term = get_term( $cat_id, 'product_cat' );
+																	<label><?php esc_html_e( 'Tags for this priority day:', 'advanced-shipping-settings' ); ?></label>
+																	<div class="ass-tag-dropzone sortable-list" data-type="priority_day" data-method-id="<?php echo esc_attr( $method_id ); ?>">
+																		<?php
+																		$p_tags = $p_day['tags'] ?? [];
+																		foreach ( $p_tags as $tag_id ) :
+																			$term = get_term( $tag_id, 'product_tag' );
 																			if ( ! $term || is_wp_error( $term ) ) continue;
 																			?>
-																			<div class="ass-cat-pill" data-id="<?php echo esc_attr( $cat_id ); ?>">
+																			<div class="ass-tag-pill" data-id="<?php echo esc_attr( $tag_id ); ?>">
 																				<?php echo esc_html( $term->name ); ?>
-																				<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][categories][]" value="<?php echo esc_attr( $cat_id ); ?>">
-																				<span class="remove-cat">×</span>
+																				<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][tags][]" value="<?php echo esc_attr( $tag_id ); ?>">
+																				<span class="remove-tag">×</span>
 																			</div>
 																		<?php endforeach; ?>
 																	</div>
@@ -170,18 +170,18 @@ class Shipping_Rules_Page {
 																<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 															</div>
 															<div class="ass-field">
-																<label><?php esc_html_e( 'Categories for this date:', 'advanced-shipping-settings' ); ?></label>
-																<div class="ass-category-dropzone sortable-list" data-type="by_date" data-method-id="<?php echo esc_attr( $method_id ); ?>">
-																	<?php 
-																	$date_cats = $date_info['categories'] ?? [];
-																	foreach ( $date_cats as $cat_id ) : 
-																		$term = get_term( $cat_id, 'product_cat' );
+																<label><?php esc_html_e( 'Tags for this date:', 'advanced-shipping-settings' ); ?></label>
+																<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method-id="<?php echo esc_attr( $method_id ); ?>">
+																	<?php
+																	$date_tags = $date_info['tags'] ?? [];
+																	foreach ( $date_tags as $tag_id ) :
+																		$term = get_term( $tag_id, 'product_tag' );
 																		if ( ! $term || is_wp_error( $term ) ) continue;
 																		?>
-																		<div class="ass-cat-pill" data-id="<?php echo esc_attr( $cat_id ); ?>">
+																		<div class="ass-tag-pill" data-id="<?php echo esc_attr( $tag_id ); ?>">
 																			<?php echo esc_html( $term->name ); ?>
-																			<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][categories][]" value="<?php echo esc_attr( $cat_id ); ?>">
-																			<span class="remove-cat">×</span>
+																			<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][tags][]" value="<?php echo esc_attr( $tag_id ); ?>">
+																			<span class="remove-tag">×</span>
 																		</div>
 																	<?php endforeach; ?>
 																</div>
@@ -200,12 +200,12 @@ class Shipping_Rules_Page {
 
 					<div class="ass-sidebar">
 						<div class="ass-sidebar-inner">
-							<h3><?php esc_html_e( 'Product Categories', 'advanced-shipping-settings' ); ?></h3>
-							<p class="description"><?php esc_html_e( 'Drag categories to shipping methods or specific dates.', 'advanced-shipping-settings' ); ?></p>
-							<div class="ass-category-source sortable-list">
-								<?php foreach ( $categories as $cat ) : ?>
-									<div class="ass-cat-pill" data-id="<?php echo esc_attr( $cat->term_id ); ?>">
-										<?php echo esc_html( $cat->name ); ?>
+							<h3><?php esc_html_e( 'Product Tags', 'advanced-shipping-settings' ); ?></h3>
+							<p class="description"><?php esc_html_e( 'Drag tags to shipping methods or specific dates.', 'advanced-shipping-settings' ); ?></p>
+							<div class="ass-tag-source sortable-list">
+								<?php foreach ( $tags as $tag ) : ?>
+									<div class="ass-tag-pill" data-id="<?php echo esc_attr( $tag->term_id ); ?>">
+										<?php echo esc_html( $tag->name ); ?>
 									</div>
 								<?php endforeach; ?>
 							</div>
@@ -238,8 +238,8 @@ class Shipping_Rules_Page {
 					<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 				</div>
 				<div class="ass-field">
-					<label><?php esc_html_e( 'Categories for this date:', 'advanced-shipping-settings' ); ?></label>
-					<div class="ass-category-dropzone sortable-list" data-type="by_date" data-method_id="{method_id}">
+					<label><?php esc_html_e( 'Tags for this date:', 'advanced-shipping-settings' ); ?></label>
+					<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method_id="{method_id}">
 					</div>
 				</div>
 			</div>
@@ -264,8 +264,8 @@ class Shipping_Rules_Page {
 					<button type="button" class="button remove-priority-day-row">×</button>
 				</div>
 				<div class="ass-field">
-					<label><?php esc_html_e( 'Categories for this priority day:', 'advanced-shipping-settings' ); ?></label>
-					<div class="ass-category-dropzone sortable-list" data-type="priority_day" data-method-id="{method_id}">
+					<label><?php esc_html_e( 'Tags for this priority day:', 'advanced-shipping-settings' ); ?></label>
+					<div class="ass-tag-dropzone sortable-list" data-type="priority_day" data-method-id="{method_id}">
 					</div>
 				</div>
 			</div>
@@ -309,11 +309,11 @@ class Shipping_Rules_Page {
 	}
 
 	/**
-	 * Get all product categories.
+	 * Get all product tags.
 	 */
-	private function get_all_product_categories(): array {
+	private function get_all_product_tags(): array {
 		return get_terms( [
-			'taxonomy'   => 'product_cat',
+			'taxonomy'   => 'product_tag',
 			'hide_empty' => false,
 		] );
 	}
@@ -340,17 +340,17 @@ class Shipping_Rules_Page {
 			if ( 'asap' === $type ) {
 				$rule['sending_days']  = isset( $data['sending_days'] ) ? array_map( 'absint', (array) $data['sending_days'] ) : [];
 				$rule['max_ship_days'] = absint( $data['max_ship_days'] ?? 0 );
-				$rule['categories']    = isset( $data['categories'] ) ? array_map( 'absint', (array) $data['categories'] ) : [];
-				
+				$rule['tags']          = isset( $data['tags'] ) ? array_map( 'absint', (array) $data['tags'] ) : [];
+
 				$priority_days = isset( $data['priority_days'] ) ? (array) $data['priority_days'] : [];
 				$sanitized_priority = [];
 				foreach ( $priority_days as $p_day ) {
 					if ( empty( $p_day['date'] ) ) continue;
 					$sanitized_priority[] = [
-						'date'       => sanitize_text_field( $p_day['date'] ),
-						'label'      => sanitize_text_field( $p_day['label'] ?? '' ),
-						'priority'   => absint( $p_day['priority'] ?? 1 ),
-						'categories' => isset( $p_day['categories'] ) ? array_map( 'absint', (array) $p_day['categories'] ) : [],
+						'date'  => sanitize_text_field( $p_day['date'] ),
+						'label' => sanitize_text_field( $p_day['label'] ?? '' ),
+						'priority' => absint( $p_day['priority'] ?? 1 ),
+						'tags'  => isset( $p_day['tags'] ) ? array_map( 'absint', (array) $p_day['tags'] ) : [],
 					];
 				}
 				$rule['priority_days'] = $sanitized_priority;
@@ -359,12 +359,12 @@ class Shipping_Rules_Page {
 				$sanitized_dates = [];
 				foreach ( $dates as $date_info ) {
 					if ( empty( $date_info['date'] ) ) continue;
-					
+
 					$sanitized_dates[] = [
-						'date'       => sanitize_text_field( $date_info['date'] ),
-						'label'      => sanitize_text_field( $date_info['label'] ?? '' ),
+						'date'      => sanitize_text_field( $date_info['date'] ),
+						'label'     => sanitize_text_field( $date_info['label'] ?? '' ),
 						'show_until' => sanitize_text_field( $date_info['show_until'] ?? '' ),
-						'categories' => isset( $date_info['categories'] ) ? array_map( 'absint', (array) $date_info['categories'] ) : [],
+						'tags'      => isset( $date_info['tags'] ) ? array_map( 'absint', (array) $date_info['tags'] ) : [],
 					];
 				}
 				// Sort dates chronologically.

@@ -53,7 +53,7 @@ class Hooks {
 	}
 
 	/**
-	 * Filter available shipping methods based on cart categories and rules.
+	 * Filter available shipping methods based on cart tags and rules.
 	 * Uses PHP_INT_MAX priority to run after all other filters.
 	 */
 	public function filter_shipping_methods( array $rates, array $package ): array {
@@ -113,7 +113,7 @@ class Hooks {
 	public function enqueue_checkout_scripts(): void {
 		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
 			// For now, no specific selectors needed as WooCommerce handles most updates
-			// But we can add this later if we need dynamic category-based updates
+			// But we can add this later if we need dynamic tag-based updates
 			$selectors = apply_filters( 'ass_checkout_update_selectors', [] );
 
 			if ( ! empty( $selectors ) ) {
@@ -266,23 +266,13 @@ class Hooks {
 	}
 
 	public function maybe_hide_checkout_button(): void {
-		// Only run on cart page
-		if ( ! function_exists( 'is_cart' ) || ! is_cart() ) {
-			return;
-		}
 
-		// Hide checkout button if we have rules and no shipping methods available
 		if ( $this->should_show_custom_no_shipping() ) {
-			// Remove the default proceed to checkout button
 			remove_action( 'woocommerce_proceed_to_checkout', 'woocommerce_button_proceed_to_checkout', 20 );
 		}
 	}
 
 	public function display_free_shipping_widget_in_cart(): void {
-		// Only run on cart page
-		if ( ! function_exists( 'is_cart' ) || ! is_cart() ) {
-			return;
-		}
 
 		$settings = Settings_Manager::instance()->get_widget_settings();
 		
