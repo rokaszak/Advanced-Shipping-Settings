@@ -145,11 +145,15 @@
     color: #666;
 }
 
-.ass-footer-save {
-    flex-basis: 100%;
-    margin-top: 30px;
-    padding: 20px 0;
+.ass-sidebar-save {
+    margin-top: 20px;
+    padding-top: 15px;
     border-top: 1px solid #ccd0d4;
+}
+
+.ass-sidebar-save .button {
+    width: 100%;
+    justify-content: center;
 }
 
 .ass-holiday-row {

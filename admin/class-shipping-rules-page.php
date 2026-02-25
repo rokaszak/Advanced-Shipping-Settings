@@ -209,11 +209,10 @@ class Shipping_Rules_Page {
 									</div>
 								<?php endforeach; ?>
 							</div>
+							<div class="ass-sidebar-save">
+								<input type="submit" name="ass_save_rules" class="button button-primary button-large" value="<?php esc_attr_e( 'Save All Rules', 'advanced-shipping-settings' ); ?>">
+							</div>
 						</div>
-					</div>
-
-					<div class="ass-footer-save">
-						<input type="submit" name="ass_save_rules" class="button button-primary button-large" value="<?php esc_attr_e( 'Save All Rules', 'advanced-shipping-settings' ); ?>">
 					</div>
 				</form>
 			</div>
@@ -239,7 +238,7 @@ class Shipping_Rules_Page {
 				</div>
 				<div class="ass-field">
 					<label><?php esc_html_e( 'Tags for this date:', 'advanced-shipping-settings' ); ?></label>
-					<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method_id="{method_id}">
+					<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method-id="{method_id}">
 					</div>
 				</div>
 			</div>
