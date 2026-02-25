@@ -77,9 +77,9 @@
 
 .ass-tag-dropzone {
     min-height: 50px;
-    border: 2px dashed #ccd0d4;
+    border: 2px dashed #3c434a;
     padding: 10px;
-    background: #f9f9f9;
+    background: #ffffff5e;
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
@@ -89,7 +89,7 @@
     background: #007cba;
     color: #fff;
     padding: 4px 10px;
-    border-radius: 15px;
+    border-radius: 5px;
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -124,6 +124,12 @@
     padding: 15px;
     margin-bottom: 15px;
     background: #f9f9f9;
+}
+
+.ass-date-row.ass-row-not-shown,
+.ass-priority-day-row.ass-row-not-shown {
+    border: 1px solid #f00;
+    background: #fff4f4;
 }
 
 .ass-date-fields, .ass-priority-day-fields {
@@ -183,6 +189,15 @@
 }
 
 .remove-date-row:hover {
+    background: #fbeaea !important;
+}
+
+.remove-priority-day-row {
+    color: #a00 !important;
+    border-color: #a00 !important;
+}
+
+.remove-priority-day-row:hover {
     background: #fbeaea !important;
 }
 

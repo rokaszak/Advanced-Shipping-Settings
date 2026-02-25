@@ -107,7 +107,7 @@ jQuery(document).ready(function($) {
                         inputName = 'rules[' + methodId + '][dates][' + dateIndex + '][tags][]';
                     }
 
-                    var pillHtml = '<div class="ass-tag-pill" data-id="' + tagId + '">' +
+                    var pillHtml = '<div class="ass-tag-pill ass-tag-color-' + tagId + '" data-id="' + tagId + '">' +
                         '<span>' + tagName + '</span>' +
                         '<input type="hidden" name="' + inputName + '" value="' + tagId + '">' +
                         '<span class="remove-tag">×</span>' +
