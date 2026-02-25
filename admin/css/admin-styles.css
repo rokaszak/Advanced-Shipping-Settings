@@ -156,6 +156,11 @@
     justify-content: center;
 }
 
+.ass-sidebar-save .button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .ass-holiday-row {
     display: flex;
     gap: 10px;

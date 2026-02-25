@@ -3,6 +3,38 @@ jQuery(document).ready(function($) {
      * Rules Page Logic
      */
 
+    // Save button state and unsaved-changes confirmation (Shipping Rules page only)
+    var $rulesForm = $('#ass-rules-form');
+    if ($rulesForm.length) {
+        var formIsDirty = false;
+        var formSubmitting = false;
+        var $saveBtn = $('#ass-save-rules-btn');
+
+        function setFormDirty() {
+            formIsDirty = true;
+            $saveBtn.prop('disabled', false);
+        }
+
+        $rulesForm.on('change input', 'input:not([type="submit"]), select', setFormDirty);
+        $(window).on('beforeunload', function(e) {
+            if (formIsDirty && !formSubmitting) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        });
+        $rulesForm.on('submit', function() {
+            formSubmitting = true;
+        });
+
+        $(document).on('click', '.remove-tag', setFormDirty);
+        $(document).on('click', '.add-date-row', setFormDirty);
+        $(document).on('click', '.remove-date-row', setFormDirty);
+        $(document).on('click', '.add-priority-day-row', setFormDirty);
+        $(document).on('click', '.remove-priority-day-row', setFormDirty);
+        $(document).on('ass-form-dirty', setFormDirty);
+    }
+
     // Toggle between ASAP and BY DATE panes
     $(document).on('change', '.ass-type-toggle', function() {
         var $card = $(this).closest('.ass-method-card');
@@ -82,6 +114,7 @@ jQuery(document).ready(function($) {
                         '</div>';
 
                     $(itemEl).replaceWith(pillHtml);
+                    $(document.body).trigger('ass-form-dirty');
                 }
             });
             $dropzone.data('sortable-initialized', true);

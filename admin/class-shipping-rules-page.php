@@ -210,7 +210,7 @@ class Shipping_Rules_Page {
 								<?php endforeach; ?>
 							</div>
 							<div class="ass-sidebar-save">
-								<input type="submit" name="ass_save_rules" class="button button-primary button-large" value="<?php esc_attr_e( 'Save All Rules', 'advanced-shipping-settings' ); ?>">
+								<input type="submit" name="ass_save_rules" id="ass-save-rules-btn" class="button button-primary button-large" value="<?php esc_attr_e( 'Save All Rules', 'advanced-shipping-settings' ); ?>" disabled>
 							</div>
 						</div>
 					</div>
