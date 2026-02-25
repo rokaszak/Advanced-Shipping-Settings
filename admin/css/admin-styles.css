@@ -140,6 +140,14 @@
     flex-wrap: wrap;
 }
 
+.ass-row-visibility-label {
+    display: block;
+    font-weight: normal;
+    font-size: 12px;
+    color: #646970;
+    margin: 10px 0 0 0;
+}
+
 .ass-input-group {
     display: flex;
     flex-direction: column;

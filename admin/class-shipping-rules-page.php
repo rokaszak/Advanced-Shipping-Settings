@@ -155,6 +155,14 @@ class Shipping_Rules_Page {
 																		<?php endforeach; ?>
 																	</div>
 																</div>
+																<label class="ass-row-visibility-label"><?php
+																if ( $p_row_hidden ) {
+																	echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
+																} else {
+																	$p_last_visible = ( new \DateTime( $p_day['date'] ) )->modify( '-1 day' )->format( 'Y-m-d' );
+																	echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $p_last_visible ) );
+																}
+																?></label>
 															</div>
 														<?php endforeach; ?>
 													</div>
@@ -205,6 +213,18 @@ class Shipping_Rules_Page {
 																	<?php endforeach; ?>
 																</div>
 															</div>
+															<label class="ass-row-visibility-label"><?php
+																if ( $date_row_hidden ) {
+																	echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
+																} else {
+																	$cutoff = $date_info['date'];
+																	if ( ! empty( $date_info['show_until'] ) && $date_info['show_until'] < $cutoff ) {
+																		$cutoff = $date_info['show_until'];
+																	}
+																	$last_visible = ( new \DateTime( $cutoff ) )->modify( '-1 day' )->format( 'Y-m-d' );
+																	echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $last_visible ) );
+																}
+																?></label>
 														</div>
 													<?php endforeach; ?>
 												</div>
@@ -260,6 +280,7 @@ class Shipping_Rules_Page {
 					<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method-id="{method_id}">
 					</div>
 				</div>
+				<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
 			</div>
 		</script>
 
@@ -282,6 +303,7 @@ class Shipping_Rules_Page {
 					<div class="ass-tag-dropzone sortable-list" data-type="priority_day" data-method-id="{method_id}">
 					</div>
 				</div>
+				<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
 			</div>
 		</script>
 		<?php
