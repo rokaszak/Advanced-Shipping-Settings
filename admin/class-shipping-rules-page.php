@@ -136,10 +136,6 @@ class Shipping_Rules_Page {
 																		<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
 																		<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][label]" value="<?php echo esc_attr( $p_day['label'] ?? '' ); ?>" placeholder="e.g. Christmas Reservation">
 																	</div>
-																	<div class="ass-input-group">
-																		<label><?php esc_html_e( 'Priority:', 'advanced-shipping-settings' ); ?></label>
-																		<input type="number" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][priority]" value="<?php echo esc_attr( $p_day['priority'] ?? 1 ); ?>" class="small-text">
-																	</div>
 																	<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 																</div>
 																<div class="ass-field">
@@ -279,10 +275,6 @@ class Shipping_Rules_Page {
 						<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
 						<input type="text" name="rules[{method_id}][priority_days][{index}][label]" placeholder="e.g. Christmas Reservation">
 					</div>
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Priority:', 'advanced-shipping-settings' ); ?></label>
-						<input type="number" name="rules[{method_id}][priority_days][{index}][priority]" value="1" class="small-text">
-					</div>
 					<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 				</div>
 				<div class="ass-field">
@@ -371,7 +363,6 @@ class Shipping_Rules_Page {
 					$sanitized_priority[] = [
 						'date'  => sanitize_text_field( $p_day['date'] ),
 						'label' => sanitize_text_field( $p_day['label'] ?? '' ),
-						'priority' => absint( $p_day['priority'] ?? 1 ),
 						'tags'  => isset( $p_day['tags'] ) ? array_map( 'absint', (array) $p_day['tags'] ) : [],
 					];
 				}
