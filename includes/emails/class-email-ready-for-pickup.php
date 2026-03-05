@@ -216,7 +216,7 @@ class Email_Ready_For_Pickup extends \WC_Email {
 	/**
 	 * Get template args for the email template.
 	 *
-	 * @param bool $plain_text Whether this is the plain-text version.
+	 * @param bool $plain_text Whether this is the plain-text.
 	 * @return array
 	 */
 	protected function get_template_args( $plain_text = false ) {

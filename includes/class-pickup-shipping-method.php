@@ -11,6 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Pickup_Shipping_Method extends \WC_Shipping_Method {
 
+	/** @var string Pickup location details (for Ready for Pickup email). */
+	public $description = '';
+
+	/** @var string|float Pickup fee. */
+	public $fee = 0;
+
 	/**
 	 * Constructor.
 	 */
