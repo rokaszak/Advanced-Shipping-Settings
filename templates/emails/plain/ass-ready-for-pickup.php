@@ -12,7 +12,6 @@
  *
  * @see https://woocommerce.com/document/template-structure/
  * @package Advanced Shipping Settings
- * @version 1.6.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

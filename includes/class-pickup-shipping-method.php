@@ -19,7 +19,7 @@ class Pickup_Shipping_Method extends \WC_Shipping_Method {
 		$this->instance_id        = absint( $instance_id );
 		$this->method_title       = $title ? $title : __( 'Pickup', 'advanced-shipping-settings' );
 		$this->method_description = __( 'Custom pickup location created via Advanced Shipping Settings.', 'advanced-shipping-settings' );
-		$this->supports           = [ 'shipping-zones', 'instance-settings' ];
+		$this->supports           = [ 'shipping-zones', 'instance-settings', 'instance-settings-modal' ];
 
 		$this->init();
 	}
@@ -28,33 +28,16 @@ class Pickup_Shipping_Method extends \WC_Shipping_Method {
 	 * Initialize settings.
 	 */
 	public function init() {
-		// Load the settings.
-		$this->init_form_fields();
-		$this->init_settings();
-
-		// Define user set variables.
-		$this->enabled     = $this->get_option( 'enabled' );
-		$this->title       = $this->get_option( 'title', $this->method_title );
-		$this->fee         = $this->get_option( 'fee', 0 );
-		$this->description = $this->get_option( 'description', '' );
-
-		// Actions.
-		add_action( 'woocommerce_update_options_shipping_' . $this->id, [ $this, 'process_admin_options' ] );
-	}
-
-	/**
-	 * Init form fields.
-	 */
-	public function init_form_fields() {
-		$this->form_fields = [
+		// Instance form fields: used by WooCommerce for the zone method modal and for saving.
+		$this->instance_form_fields = [
 			'enabled' => [
 				'title'   => __( 'Enable/Disable', 'advanced-shipping-settings' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable this pickup location', 'advanced-shipping-settings' ),
 				'default' => 'yes',
 			],
-			'title'   => [
-				'title'       => __( 'Method Title', 'advanced-shipping-settings' ),
+			'title' => [
+				'title'       => __( 'Title', 'advanced-shipping-settings' ),
 				'type'        => 'text',
 				'description' => __( 'This controls the title which the user sees during checkout.', 'advanced-shipping-settings' ),
 				'default'     => $this->method_title,
@@ -84,6 +67,23 @@ class Pickup_Shipping_Method extends \WC_Shipping_Method {
 				'desc_tip'    => true,
 			],
 		];
+
+		$this->init_form_fields();
+		$this->init_settings();
+
+		$this->enabled     = $this->get_option( 'enabled' );
+		$this->title       = $this->get_option( 'title', $this->method_title );
+		$this->fee         = $this->get_option( 'fee', 0 );
+		$this->description = $this->get_option( 'description', '' );
+
+		add_action( 'woocommerce_update_options_shipping_' . $this->id, [ $this, 'process_admin_options' ] );
+	}
+
+	/**
+	 * Init form fields. Use same as instance form fields so init_settings/get_option work.
+	 */
+	public function init_form_fields() {
+		$this->form_fields = $this->instance_form_fields;
 	}
 
 	/**

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advanced Shipping Settings
  * Description: Conditionally select which product tags are available in which shipping method (ASAP or BY DATE).
- * Version: 1.6.0
+ * Version: 1.6.1
  * Author: Rokas Zakarauskas
  * Text Domain: advanced-shipping-settings
  * Domain Path: /languages
