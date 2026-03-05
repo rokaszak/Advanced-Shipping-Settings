@@ -50,7 +50,7 @@ if ( ! empty( $order->get_billing_first_name() ) ) {
 		<?php if ( ! empty( $method_info_intro ) ) : ?>
 			<p><?php echo esc_html( $method_info_intro ); ?></p>
 		<?php endif; ?>
-		<p><?php echo wp_kses_post( wpautop( wptexturize( $pickup_description ) ) ); ?></p>
+		<p><?php echo wp_kses_post( wpautop( make_clickable( wptexturize( $pickup_description ) ) ) ); ?></p>
 	<?php endif; ?>
 	<p><?php echo esc_html( $order_reminder_line ); ?></p>
 <?php else : ?>
@@ -59,7 +59,7 @@ if ( ! empty( $order->get_billing_first_name() ) ) {
 		<?php if ( ! empty( $method_info_intro ) ) : ?>
 			<p><?php echo esc_html( $method_info_intro ); ?></p>
 		<?php endif; ?>
-		<p><?php echo wp_kses_post( wpautop( wptexturize( $pickup_description ) ) ); ?></p>
+		<p><?php echo wp_kses_post( wpautop( make_clickable( wptexturize( $pickup_description ) ) ) ); ?></p>
 	<?php endif; ?>
 <?php endif; ?>
 <?php echo $email_improvements_enabled ? '</div>' : ''; ?>
