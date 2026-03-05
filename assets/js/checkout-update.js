@@ -4,7 +4,7 @@
  * Triggers `update_checkout` when relevant fields change.
  * Modeled after WPFactory's alg-wc-cs-update-checkout.js
  *
- * @version 1.0.0
+ * @version 1.6.0
  * @since   1.0.0
  */
 

@@ -27,7 +27,7 @@ class Plugin_Core {
 
 	private function define_constants(): void {
 		if ( ! defined( 'ASS_VERSION' ) ) {
-			define( 'ASS_VERSION', '1.0.0' );
+			define( 'ASS_VERSION', '1.6.0' );
 		}
 		if ( ! defined( 'ASS_PATH' ) ) {
 			define( 'ASS_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
@@ -49,6 +49,7 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-shortcode-handler.php';
 		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
 		require_once ASS_PATH . 'includes/class-widget-handler.php';
+		require_once ASS_PATH . 'includes/class-ready-for-pickup.php';
 
 		if ( is_admin() ) {
 			require_once ASS_PATH . 'admin/class-admin-menu.php';
@@ -76,6 +77,7 @@ class Plugin_Core {
 		Order_Display_Handler::instance();
 		Shortcode_Handler::instance();
 		Widget_Handler::instance();
+		Ready_For_Pickup::instance();
 
 		if ( is_admin() ) {
 			Admin_Menu::instance();
