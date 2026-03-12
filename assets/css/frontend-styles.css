@@ -106,6 +106,34 @@
     color: #ccc;
 }
 
+/* Countdown for dates closing within 24h */
+.ass-date-has-countdown {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 8px;
+}
+
+.ass-date-has-countdown .ass-countdown {
+    font-size: 12px;
+    color: #df0b0b;
+    font-weight: 600;
+}
+
+/* Checkout countdown for date radio options */
+.ass-date-option-has-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ass-date-option-has-countdown .ass-countdown {
+    font-size: 12px;
+    color: #df0b0b;
+    font-weight: 600;
+}
+
 .ass-asap-date {
     font-size: 14px;
     color: #444;

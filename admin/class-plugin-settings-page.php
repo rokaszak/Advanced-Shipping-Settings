@@ -67,6 +67,12 @@ class Plugin_Settings_Page {
 						</td>
 					</tr>
 					<tr>
+						<th><label><?php esc_html_e( 'Invalid Date Error:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Error shown when the selected reservation date is no longer available (e.g. "Invalid reservation date selected.").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="settings[translations][invalid_date_error]" value="<?php echo esc_attr( $translations['invalid_date_error'] ?? 'Invalid reservation date selected.' ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
 						<th><label><?php esc_html_e( 'Shortcode Label:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Shown in product page for BY DATE methods (e.g. "Available to reserve:").', 'advanced-shipping-settings' ) ); ?></label></th>
 						<td>
 							<input type="text" name="settings[translations][shortcode_rezervuoti]" value="<?php echo esc_attr( $translations['shortcode_rezervuoti'] ?? 'Available to reserve:' ); ?>" class="regular-text">
@@ -392,6 +398,11 @@ class Plugin_Settings_Page {
 
 		if ( isset( $raw_settings['delivery_disclaimer_url'] ) ) {
 			$sanitized_settings['delivery_disclaimer_url'] = esc_url_raw( $raw_settings['delivery_disclaimer_url'] );
+		}
+
+		$existing = Settings_Manager::instance()->get_plugin_settings();
+		if ( isset( $existing['free_shipping_widget'] ) ) {
+			$sanitized_settings['free_shipping_widget'] = $existing['free_shipping_widget'];
 		}
 
 		Settings_Manager::instance()->save_plugin_settings( $sanitized_settings );

@@ -83,36 +83,41 @@ class Shipping_Rules_Page {
 									<div class="ass-settings-panes">
 										<!-- ASAP Pane -->
 										<div class="ass-pane ass-pane-asap <?php echo 'asap' === $rule['type'] ? '' : 'hidden'; ?>">
-											<div class="ass-field">
-												<label><?php esc_html_e( 'Sending Days:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Select days when packages are sent out.', 'advanced-shipping-settings' ) ); ?></label>
-												<div class="ass-days-grid">
-													<?php 
-													$days = [ 1 => 'Mo', 2 => 'Tu', 3 => 'We', 4 => 'Th', 5 => 'Fr', 6 => 'Sa', 7 => 'Su' ];
-													$selected_days = $rule['sending_days'] ?? [];
-													foreach ( $days as $num => $label ) : ?>
-														<label><input type="checkbox" name="rules[<?php echo esc_attr( $method_id ); ?>][sending_days][]" value="<?php echo $num; ?>" <?php checked( in_array( $num, $selected_days ) ); ?>> <?php echo $label; ?></label>
-													<?php endforeach; ?>
-												</div>
-											</div>
-											<div class="ass-field">
-												<label><?php esc_html_e( 'Max ship time (work days):', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'How many working days it takes to deliver after sending (Mon-Fri).', 'advanced-shipping-settings' ) ); ?></label>
-												<input type="number" name="rules[<?php echo esc_attr( $method_id ); ?>][max_ship_days]" value="<?php echo esc_attr( $rule['max_ship_days'] ?? 0 ); ?>" min="0" class="small-text">
-											</div>
-											<div class="ass-field">
-												<label><?php esc_html_e( 'Tags:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Drag and drop tags here for normal ASAP shipping calculation.', 'advanced-shipping-settings' ) ); ?></label>
-												<div class="ass-tag-dropzone sortable-list" data-type="asap" data-method-id="<?php echo esc_attr( $method_id ); ?>">
-													<?php
-													$saved_tags = $rule['tags'] ?? [];
-													foreach ( $saved_tags as $tag_id ) :
-														$term = get_term( $tag_id, 'product_tag' );
-														if ( ! $term || is_wp_error( $term ) ) continue;
-														?>
-														<div class="ass-tag-pill ass-tag-color-<?php echo (int) $tag_id; ?>" data-id="<?php echo esc_attr( $tag_id ); ?>">
-															<?php echo esc_html( $term->name ); ?>
-															<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][tags][]" value="<?php echo esc_attr( $tag_id ); ?>">
-															<span class="remove-tag">×</span>
+											<div class="ass-general-settings-wrapper" data-method-id="<?php echo esc_attr( $method_id ); ?>">
+												<div class="ass-section-wrapper">
+													<div class="ass-save-status ass-help-tip" data-status="saved" data-tip="<?php echo esc_attr__( 'Saved', 'advanced-shipping-settings' ); ?>"><span class="ass-status-icon"></span></div>
+													<div class="ass-field">
+														<label><?php esc_html_e( 'Sending Days:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Select days when packages are sent out.', 'advanced-shipping-settings' ) ); ?></label>
+														<div class="ass-days-grid">
+															<?php 
+															$days = [ 1 => 'Mo', 2 => 'Tu', 3 => 'We', 4 => 'Th', 5 => 'Fr', 6 => 'Sa', 7 => 'Su' ];
+															$selected_days = $rule['sending_days'] ?? [];
+															foreach ( $days as $num => $label ) : ?>
+																<label><input type="checkbox" name="rules[<?php echo esc_attr( $method_id ); ?>][sending_days][]" value="<?php echo $num; ?>" <?php checked( in_array( $num, $selected_days ) ); ?>> <?php echo $label; ?></label>
+															<?php endforeach; ?>
 														</div>
-													<?php endforeach; ?>
+													</div>
+												</div>
+												<div class="ass-field">
+													<label><?php esc_html_e( 'Max ship time (work days):', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'How many working days it takes to deliver after sending (Mon-Fri).', 'advanced-shipping-settings' ) ); ?></label>
+													<input type="number" name="rules[<?php echo esc_attr( $method_id ); ?>][max_ship_days]" value="<?php echo esc_attr( $rule['max_ship_days'] ?? 0 ); ?>" min="0" class="small-text">
+												</div>
+												<div class="ass-field">
+													<label><?php esc_html_e( 'Tags:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Drag and drop tags here for normal ASAP shipping calculation.', 'advanced-shipping-settings' ) ); ?></label>
+													<div class="ass-tag-dropzone sortable-list" data-type="asap" data-method-id="<?php echo esc_attr( $method_id ); ?>">
+														<?php
+														$saved_tags = $rule['tags'] ?? [];
+														foreach ( $saved_tags as $tag_id ) :
+															$term = get_term( $tag_id, 'product_tag' );
+															if ( ! $term || is_wp_error( $term ) ) continue;
+															?>
+															<div class="ass-tag-pill ass-tag-color-<?php echo (int) $tag_id; ?>" data-id="<?php echo esc_attr( $tag_id ); ?>">
+																<?php echo esc_html( $term->name ); ?>
+																<input type="hidden" name="rules[<?php echo esc_attr( $method_id ); ?>][tags][]" value="<?php echo esc_attr( $tag_id ); ?>">
+																<span class="remove-tag">×</span>
+															</div>
+														<?php endforeach; ?>
+													</div>
 												</div>
 											</div>
 
@@ -127,16 +132,18 @@ class Shipping_Rules_Page {
 															$p_row_hidden = ! Shipping_Filter::instance()->is_date_visible( $p_date_info );
 															?>
 															<div class="ass-priority-day-row<?php echo $p_row_hidden ? ' ass-row-not-shown' : ''; ?>" data-index="<?php echo $p_index; ?>">
-																<div class="ass-priority-day-fields">
-																	<div class="ass-input-group">
-																		<label><?php esc_html_e( 'Date:', 'advanced-shipping-settings' ); ?></label>
-																		<input type="date" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][date]" value="<?php echo esc_attr( $p_day['date'] ); ?>" required>
+																<div class="ass-section-wrapper">
+																	<div class="ass-save-status ass-help-tip" data-status="saved" data-tip="<?php echo esc_attr__( 'Saved', 'advanced-shipping-settings' ); ?>"><span class="ass-status-icon"></span></div>
+																	<div class="ass-priority-day-fields">
+																		<div class="ass-input-group">
+																			<label><?php esc_html_e( 'Date:', 'advanced-shipping-settings' ); ?></label>
+																			<input type="text" class="ass-flatpickr-date" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][date]" value="<?php echo esc_attr( $p_day['date'] ); ?>" placeholder="YYYY-MM-DD" required>
+																		</div>
+																		<div class="ass-input-group">
+																			<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
+																			<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][label]" value="<?php echo esc_attr( $p_day['label'] ?? '' ); ?>" placeholder="e.g. Christmas Reservation">
+																		</div>
 																	</div>
-																	<div class="ass-input-group">
-																		<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-																		<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][priority_days][<?php echo $p_index; ?>][label]" value="<?php echo esc_attr( $p_day['label'] ?? '' ); ?>" placeholder="e.g. Christmas Reservation">
-																	</div>
-																	<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 																</div>
 																<div class="ass-field">
 																	<label><?php esc_html_e( 'Tags for this priority day:', 'advanced-shipping-settings' ); ?></label>
@@ -155,14 +162,20 @@ class Shipping_Rules_Page {
 																		<?php endforeach; ?>
 																	</div>
 																</div>
-																<label class="ass-row-visibility-label"><?php
-																if ( $p_row_hidden ) {
-																	echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
-																} else {
-																	$p_last_visible = ( new \DateTime( $p_day['date'] ) )->modify( '-1 day' )->format( 'Y-m-d' );
-																	echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $p_last_visible ) );
-																}
-																?></label>
+																<div class="ass-row-footer">
+																	<label class="ass-row-visibility-label"><?php
+																	if ( $p_row_hidden ) {
+																		echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
+																	} else {
+																		$p_last_visible = ( new \DateTime( $p_day['date'] ) )->modify( '-1 day' )->format( 'Y-m-d' );
+																		echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $p_last_visible ) );
+																	}
+																	?></label>
+																	<div class="ass-row-actions">
+																		<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
+																		<button type="button" class="button ass-duplicate-row"><?php esc_html_e( 'Duplicate', 'advanced-shipping-settings' ); ?></button>
+																	</div>
+																</div>
 															</div>
 														<?php endforeach; ?>
 													</div>
@@ -181,20 +194,44 @@ class Shipping_Rules_Page {
 														$date_row_hidden = ! Shipping_Filter::instance()->is_date_visible( $date_info );
 														?>
 														<div class="ass-date-row<?php echo $date_row_hidden ? ' ass-row-not-shown' : ''; ?>" data-index="<?php echo $index; ?>">
-															<div class="ass-date-fields">
-																<div class="ass-input-group">
-																	<label><?php esc_html_e( 'Reservation Date:', 'advanced-shipping-settings' ); ?></label>
-																	<input type="date" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][date]" value="<?php echo esc_attr( $date_info['date'] ); ?>" required>
+															<div class="ass-section-wrapper">
+																<div class="ass-save-status ass-help-tip" data-status="saved" data-tip="<?php echo esc_attr__( 'Saved', 'advanced-shipping-settings' ); ?>"><span class="ass-status-icon"></span></div>
+																<div class="ass-date-fields">
+																	<div class="ass-input-group">
+																		<label><?php esc_html_e( 'Reservation Date:', 'advanced-shipping-settings' ); ?></label>
+																		<input type="text" class="ass-flatpickr-date" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][date]" value="<?php echo esc_attr( $date_info['date'] ); ?>" placeholder="YYYY-MM-DD" required>
+																	</div>
+																	<div class="ass-input-group">
+																		<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
+																		<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][label]" value="<?php echo esc_attr( $date_info['label'] ); ?>" placeholder="e.g. January 9">
+																	</div>
+																	<div class="ass-input-group ass-show-until-group">
+																		<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. If left empty, this date is hidden as soon as the reservation date above is reached (at 23:59:59). If set, this date is also hidden when the Show Until date/time is reached. You can set both date and time.', 'advanced-shipping-settings' ) ); ?></label>
+																		<?php
+																		$show_until_raw = $date_info['show_until'] ?? '';
+																		$show_until_date = '';
+																		$show_until_time = '23:59';
+																		if ( ! empty( $show_until_raw ) ) {
+																			if ( strpos( $show_until_raw, ' ' ) !== false ) {
+																				$parts = explode( ' ', $show_until_raw, 2 );
+																				$show_until_date = $parts[0];
+																				$show_until_time = $parts[1];
+																				if ( strlen( $show_until_time ) > 5 ) {
+																					$show_until_time = substr( $show_until_time, 0, 5 );
+																				}
+																			} else {
+																				$show_until_date = $show_until_raw;
+																			}
+																		} elseif ( ! empty( $date_info['date'] ) ) {
+																			$show_until_date = ( new \DateTime( $date_info['date'] ) )->modify( '-1 day' )->format( 'Y-m-d' );
+																		}
+																		?>
+																		<div class="ass-date-time-inputs">
+																			<input type="text" class="ass-flatpickr-date" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][show_until_date]" value="<?php echo esc_attr( $show_until_date ); ?>" placeholder="YYYY-MM-DD">
+																			<input type="text" class="ass-flatpickr-time" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][show_until_time]" value="<?php echo esc_attr( $show_until_time ); ?>" placeholder="HH:MM">
+																		</div>
+																	</div>
 																</div>
-																<div class="ass-input-group">
-																	<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-																	<input type="text" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][label]" value="<?php echo esc_attr( $date_info['label'] ); ?>" placeholder="e.g. January 9">
-																</div>
-																<div class="ass-input-group">
-																	<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. If left empty, this date is hidden as soon as the reservation date above is reached (at 23:59:59). If set, this date is also hidden when the Show Until date is reached (at 00:00:00). Useful to stop showing a date earlier than the reservation date.', 'advanced-shipping-settings' ) ); ?></label>
-																	<input type="date" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][show_until]" value="<?php echo esc_attr( $date_info['show_until'] ?? '' ); ?>">
-																</div>
-																<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 															</div>
 															<div class="ass-field">
 																<label><?php esc_html_e( 'Tags for this date:', 'advanced-shipping-settings' ); ?></label>
@@ -213,18 +250,30 @@ class Shipping_Rules_Page {
 																	<?php endforeach; ?>
 																</div>
 															</div>
-															<label class="ass-row-visibility-label"><?php
-																if ( $date_row_hidden ) {
-																	echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
-																} else {
-																	$cutoff = $date_info['date'];
-																	if ( ! empty( $date_info['show_until'] ) && $date_info['show_until'] < $cutoff ) {
-																		$cutoff = $date_info['show_until'];
+															<div class="ass-row-footer">
+																<label class="ass-row-visibility-label"><?php
+																	if ( $date_row_hidden ) {
+																		echo esc_html__( 'This date is not shown to clients.', 'advanced-shipping-settings' );
+																	} else {
+																		$show_until_display = $date_info['show_until'] ?? '';
+																		if ( ! empty( $show_until_display ) && strpos( $show_until_display, ' ' ) !== false ) {
+																			$display_until = substr( $show_until_display, 0, 16 );
+																			echo sprintf( esc_html__( 'This date is shown to clients until: %s', 'advanced-shipping-settings' ), esc_html( $display_until ) );
+																		} else {
+																			$cutoff = $date_info['date'];
+																			if ( ! empty( $show_until_display ) && $show_until_display < $cutoff ) {
+																				$cutoff = $show_until_display;
+																			}
+																			$last_visible = ( new \DateTime( $cutoff ) )->modify( '-1 day' )->format( 'Y-m-d' );
+																			echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $last_visible ) );
+																		}
 																	}
-																	$last_visible = ( new \DateTime( $cutoff ) )->modify( '-1 day' )->format( 'Y-m-d' );
-																	echo sprintf( esc_html__( 'This date is shown to clients until: %s 23:59', 'advanced-shipping-settings' ), esc_html( $last_visible ) );
-																}
-																?></label>
+																	?></label>
+																<div class="ass-row-actions">
+																	<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
+																	<button type="button" class="button ass-duplicate-row"><?php esc_html_e( 'Duplicate', 'advanced-shipping-settings' ); ?></button>
+																</div>
+															</div>
 														</div>
 													<?php endforeach; ?>
 												</div>
@@ -260,50 +309,69 @@ class Shipping_Rules_Page {
 		<!-- Template for new date rows -->
 		<script type="text/template" id="ass-date-row-template">
 			<div class="ass-date-row" data-index="{index}">
-				<div class="ass-date-fields">
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Reservation Date:', 'advanced-shipping-settings' ); ?></label>
-						<input type="date" name="rules[{method_id}][dates][{index}][date]" required>
+				<div class="ass-section-wrapper">
+					<div class="ass-save-status ass-help-tip" data-status="unsaved" data-tip="<?php echo esc_attr__( 'Unsaved', 'advanced-shipping-settings' ); ?>"><span class="ass-status-icon"></span></div>
+					<div class="ass-date-fields">
+						<div class="ass-input-group">
+							<label><?php esc_html_e( 'Reservation Date:', 'advanced-shipping-settings' ); ?></label>
+							<input type="text" class="ass-flatpickr-date" name="rules[{method_id}][dates][{index}][date]" placeholder="YYYY-MM-DD" required>
+						</div>
+						<div class="ass-input-group">
+							<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
+							<input type="text" name="rules[{method_id}][dates][{index}][label]" placeholder="e.g. January 9">
+						</div>
+						<div class="ass-input-group ass-show-until-group">
+							<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. If left empty, this date is hidden as soon as the reservation date above is reached (at 23:59:59). If set, this date is also hidden when the Show Until date/time is reached. You can set both date and time.', 'advanced-shipping-settings' ) ); ?></label>
+							<div class="ass-date-time-inputs">
+								<input type="text" class="ass-flatpickr-date" name="rules[{method_id}][dates][{index}][show_until_date]" value="" placeholder="YYYY-MM-DD">
+								<input type="text" class="ass-flatpickr-time" name="rules[{method_id}][dates][{index}][show_until_time]" value="23:59" placeholder="HH:MM">
+							</div>
+						</div>
 					</div>
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-						<input type="text" name="rules[{method_id}][dates][{index}][label]" placeholder="e.g. January 9">
-					</div>
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Show Until:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. If left empty, this date is hidden as soon as the reservation date above is reached (at 23:59:59). If set, this date is also hidden when the Show Until date is reached (at 00:00:00). Useful to stop showing a date earlier than the reservation date.', 'advanced-shipping-settings' ) ); ?></label>
-						<input type="date" name="rules[{method_id}][dates][{index}][show_until]">
-					</div>
-					<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 				</div>
 				<div class="ass-field">
 					<label><?php esc_html_e( 'Tags for this date:', 'advanced-shipping-settings' ); ?></label>
 					<div class="ass-tag-dropzone sortable-list" data-type="by_date" data-method-id="{method_id}">
 					</div>
 				</div>
-				<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
+				<div class="ass-row-footer">
+					<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
+					<div class="ass-row-actions">
+						<button type="button" class="button remove-date-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
+						<button type="button" class="button ass-duplicate-row"><?php esc_html_e( 'Duplicate', 'advanced-shipping-settings' ); ?></button>
+					</div>
+				</div>
 			</div>
 		</script>
 
 		<!-- Template for new priority day rows -->
 		<script type="text/template" id="ass-priority-day-row-template">
 			<div class="ass-priority-day-row" data-index="{index}">
-				<div class="ass-priority-day-fields">
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Date:', 'advanced-shipping-settings' ); ?></label>
-						<input type="date" name="rules[{method_id}][priority_days][{index}][date]" required>
+				<div class="ass-section-wrapper">
+					<div class="ass-save-status ass-help-tip" data-status="unsaved" data-tip="<?php echo esc_attr__( 'Unsaved', 'advanced-shipping-settings' ); ?>"><span class="ass-status-icon"></span></div>
+					<div class="ass-priority-day-fields">
+						<div class="ass-input-group">
+							<label><?php esc_html_e( 'Date:', 'advanced-shipping-settings' ); ?></label>
+							<input type="text" class="ass-flatpickr-date" name="rules[{method_id}][priority_days][{index}][date]" placeholder="YYYY-MM-DD" required>
+						</div>
+						<div class="ass-input-group">
+							<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
+							<input type="text" name="rules[{method_id}][priority_days][{index}][label]" placeholder="e.g. Christmas Reservation">
+						</div>
 					</div>
-					<div class="ass-input-group">
-						<label><?php esc_html_e( 'Label:', 'advanced-shipping-settings' ); ?></label>
-						<input type="text" name="rules[{method_id}][priority_days][{index}][label]" placeholder="e.g. Christmas Reservation">
-					</div>
-					<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
 				</div>
 				<div class="ass-field">
 					<label><?php esc_html_e( 'Tags for this priority day:', 'advanced-shipping-settings' ); ?></label>
 					<div class="ass-tag-dropzone sortable-list" data-type="priority_day" data-method-id="{method_id}">
 					</div>
 				</div>
-				<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
+				<div class="ass-row-footer">
+					<label class="ass-row-visibility-label"><?php esc_html_e( 'Save to see visibility.', 'advanced-shipping-settings' ); ?></label>
+					<div class="ass-row-actions">
+						<button type="button" class="button remove-priority-day-row"><?php esc_html_e( 'Remove Date', 'advanced-shipping-settings' ); ?></button>
+						<button type="button" class="button ass-duplicate-row"><?php esc_html_e( 'Duplicate', 'advanced-shipping-settings' ); ?></button>
+					</div>
+				</div>
 			</div>
 		</script>
 		<?php
@@ -395,11 +463,18 @@ class Shipping_Rules_Page {
 				foreach ( $dates as $date_info ) {
 					if ( empty( $date_info['date'] ) ) continue;
 
+					$show_until_date = sanitize_text_field( $date_info['show_until_date'] ?? '' );
+					$show_until_time = sanitize_text_field( $date_info['show_until_time'] ?? '' );
+					$show_until = $show_until_date;
+					if ( ! empty( $show_until_date ) && ! empty( $show_until_time ) ) {
+						$show_until .= ' ' . ( strlen( $show_until_time ) > 5 ? substr( $show_until_time, 0, 5 ) : $show_until_time );
+					}
+
 					$sanitized_dates[] = [
-						'date'      => sanitize_text_field( $date_info['date'] ),
-						'label'     => sanitize_text_field( $date_info['label'] ?? '' ),
-						'show_until' => sanitize_text_field( $date_info['show_until'] ?? '' ),
-						'tags'      => isset( $date_info['tags'] ) ? array_map( 'absint', (array) $date_info['tags'] ) : [],
+						'date'       => sanitize_text_field( $date_info['date'] ),
+						'label'      => sanitize_text_field( $date_info['label'] ?? '' ),
+						'show_until' => $show_until,
+						'tags'       => isset( $date_info['tags'] ) ? array_map( 'absint', (array) $date_info['tags'] ) : [],
 					];
 				}
 				// Sort dates chronologically.

@@ -154,16 +154,26 @@ class Shipping_Filter {
 			return false;
 		}
 
-		$now_str = current_datetime()->format( 'Y-m-d' );
+		$now = current_datetime();
+		$now_str = $now->format( 'Y-m-d' );
 
 		// Date is hidden as soon as it's reached.
 		if ( $now_str >= $reservation_date ) {
 			return false;
 		}
 
-		// Optional early return.
-		if ( ! empty( $show_until ) && $now_str >= $show_until ) {
-			return false;
+		// Optional early return: hide when Show Until date/time is reached.
+		if ( ! empty( $show_until ) ) {
+			if ( strpos( $show_until, ' ' ) !== false ) {
+				$show_until_dt = \DateTimeImmutable::createFromFormat( 'Y-m-d H:i', substr( $show_until, 0, 16 ), $now->getTimezone() );
+				if ( false !== $show_until_dt && $now >= $show_until_dt ) {
+					return false;
+				}
+			} else {
+				if ( $now_str >= $show_until ) {
+					return false;
+				}
+			}
 		}
 
 		return true;

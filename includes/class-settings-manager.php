@@ -163,6 +163,12 @@ class Settings_Manager {
 			'use_pre_discount' => ! empty( $widget_settings['use_pre_discount'] ),
 			'hide_no_threshold' => ! empty( $widget_settings['hide_no_threshold'] ),
 			'hide_already_free' => ! empty( $widget_settings['hide_already_free'] ),
+			'shortcode_countdown_enabled' => ! empty( $widget_settings['shortcode_countdown_enabled'] ),
+			'checkout_countdown_enabled' => ! empty( $widget_settings['checkout_countdown_enabled'] ),
+			'countdown_prefix' => $widget_settings['countdown_prefix'] ?? 'closes in',
+			'countdown_suffix_hours' => $widget_settings['countdown_suffix_hours'] ?? 'h',
+			'countdown_suffix_minutes' => $widget_settings['countdown_suffix_minutes'] ?? 'min',
+			'countdown_suffix_seconds' => $widget_settings['countdown_suffix_seconds'] ?? 's',
 			'texts' => [
 				'title' => $widget_settings['texts']['title'] ?? 'Nemokamo pristatymo progresas',
 				'progress_template' => $widget_settings['texts']['progress_template'] ?? 'Iki nemokamo pristatymo trūksta {remaining} (iš {threshold}).',

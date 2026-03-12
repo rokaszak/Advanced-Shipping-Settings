@@ -59,7 +59,7 @@ class Checkout_Handler {
 			if ( ! empty( $available_dates ) ) {
 				$options = [];
 				foreach ( $available_dates as $date_info ) {
-					$options[ $date_info['date'] ] = $date_info['label'];
+					$options[ $date_info['date'] ] = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
 				}
 				
 				$prompt = Settings_Manager::instance()->get_translation( 'reservation_prompt', 'Select a reservation date:' );
@@ -125,32 +125,7 @@ class Checkout_Handler {
 			return;
 		}
 
-		$allowed_html = wp_kses_allowed_html( 'post' );
-		$allowed_html['input'] = [
-			'type' => true,
-			'name' => true,
-			'value' => true,
-			'required' => true,
-			'class' => true,
-			'id' => true,
-		];
-		$allowed_html['label'] = [
-			'class' => true,
-			'for' => true,
-		];
-		$allowed_html['div'] = [
-			'id' => true,
-			'class' => true,
-		];
-		$allowed_html['a'] = array_merge( $allowed_html['a'] ?? [], [
-			'href' => true,
-			'target' => true,
-			'rel' => true,
-			'class' => true,
-		] );
-		$allowed_html['hr'] = [
-			'class' => true,
-		];
+		$allowed_html = $this->get_checkout_allowed_html();
 
 		echo '<div id="ass-checkout-shipping-info-wrapper" class="ass-checkout-order-review-wrapper">' . wp_kses( $content, $allowed_html ) . '</div>';
 	}
@@ -280,6 +255,15 @@ class Checkout_Handler {
 			return '<p class="ass-no-dates-error">' . esc_html__( 'No available dates for selected items.', 'advanced-shipping-settings' ) . '</p>';
 		}
 
+		$widget_settings = Settings_Manager::instance()->get_widget_settings();
+		$countdown_enabled = ! empty( $widget_settings['checkout_countdown_enabled'] );
+		$countdown_config = [
+			'prefix'         => $widget_settings['countdown_prefix'] ?? 'closes in',
+			'suffix_hours'   => $widget_settings['countdown_suffix_hours'] ?? 'h',
+			'suffix_minutes' => $widget_settings['countdown_suffix_minutes'] ?? 'min',
+			'suffix_seconds' => $widget_settings['countdown_suffix_seconds'] ?? 's',
+		];
+
 		$prompt = Settings_Manager::instance()->get_translation( 'reservation_prompt', 'Select a reservation date:' );
 
 		$html = '<p class="ass-reservation-prompt"><strong>' . esc_html( $prompt ) . '</strong></p>';
@@ -287,17 +271,91 @@ class Checkout_Handler {
 
 		foreach ( $available_dates as $date_info ) {
 			$date  = $date_info['date'];
-			$label = $date_info['label'];
+			$label = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
+			$countdown_data = $countdown_enabled ? $this->get_countdown_data( $date_info, $countdown_config ) : null;
 
-			$html .= '<label class="ass-date-option">';
-			$html .= '<input type="radio" name="deliver_by_date" value="' . esc_attr( $date ) . '" required> ';
-			$html .= esc_html( $label );
-			$html .= '</label><br>';
+			if ( $countdown_data ) {
+				$html .= '<label class="ass-date-option ass-date-option-has-countdown" ';
+				$html .= 'data-ass-countdown-target="' . esc_attr( $countdown_data['iso_target'] ) . '" ';
+				$html .= 'data-ass-countdown-prefix="' . esc_attr( $countdown_config['prefix'] ) . '" ';
+				$html .= 'data-ass-countdown-suffix-hours="' . esc_attr( $countdown_config['suffix_hours'] ) . '" ';
+				$html .= 'data-ass-countdown-suffix-minutes="' . esc_attr( $countdown_config['suffix_minutes'] ) . '" ';
+				$html .= 'data-ass-countdown-suffix-seconds="' . esc_attr( $countdown_config['suffix_seconds'] ) . '">';
+				$html .= '<input type="radio" name="deliver_by_date" value="' . esc_attr( $date ) . '" required> ';
+				$html .= '<span class="ass-date-option-text">' . esc_html( $label ) . '</span> ';
+				$html .= '<span class="ass-countdown">' . esc_html( $countdown_data['initial_text'] ) . '</span>';
+				$html .= '</label><br>';
+			} else {
+				$html .= '<label class="ass-date-option">';
+				$html .= '<input type="radio" name="deliver_by_date" value="' . esc_attr( $date ) . '" required> ';
+				$html .= esc_html( $label );
+				$html .= '</label><br>';
+			}
 		}
 
 		$html .= '</div>';
 		
 		return $html;
+	}
+
+	/**
+	 * Compute countdown data for a date with less than 24h until show_until.
+	 * Returns null if countdown should not be shown.
+	 */
+	private function get_countdown_data( array $date_info, array $config ): ?array {
+		$reservation_date = $date_info['date'] ?? '';
+		$show_until       = $date_info['show_until'] ?? '';
+
+		if ( empty( $reservation_date ) ) {
+			return null;
+		}
+
+		$tz = wp_timezone();
+		$now = new \DateTimeImmutable( 'now', $tz );
+
+		if ( ! empty( $show_until ) ) {
+			if ( strpos( $show_until, ' ' ) !== false ) {
+				$target = \DateTimeImmutable::createFromFormat( 'Y-m-d H:i', substr( $show_until, 0, 16 ), $tz );
+			} else {
+				$target = \DateTimeImmutable::createFromFormat( 'Y-m-d', $show_until, $tz )->setTime( 0, 0, 0 );
+			}
+		} else {
+			$target = \DateTimeImmutable::createFromFormat( 'Y-m-d', $reservation_date, $tz )->setTime( 0, 0, 0 );
+		}
+
+		if ( false === $target || $now >= $target ) {
+			return null;
+		}
+
+		$diff = $now->diff( $target );
+		$total_minutes = ( $diff->days * 24 * 60 ) + ( $diff->h * 60 ) + $diff->i;
+
+		if ( $total_minutes >= 24 * 60 ) {
+			return null;
+		}
+
+		$total_seconds = (int) ( ( $diff->days * 24 * 3600 ) + ( $diff->h * 3600 ) + ( $diff->i * 60 ) + $diff->s );
+		$hours   = (int) floor( $total_seconds / 3600 );
+		$minutes = (int) floor( ( $total_seconds % 3600 ) / 60 );
+		$seconds = (int) ( $total_seconds % 60 );
+
+		$parts = [];
+		if ( $hours > 0 ) {
+			$parts[] = $hours . $config['suffix_hours'];
+		}
+		if ( $minutes > 0 || $hours > 0 ) {
+			$parts[] = $minutes . $config['suffix_minutes'];
+		}
+		$parts[] = $seconds . $config['suffix_seconds'];
+
+		$text = implode( ' ', $parts );
+		$prefix = $config['prefix'] ?? '';
+		$initial_text = $prefix ? $prefix . ' ' . $text : $text;
+
+		return [
+			'iso_target'   => $target->format( \DateTimeInterface::ATOM ),
+			'initial_text' => $initial_text,
+		];
 	}
 
 	/**
@@ -419,9 +477,10 @@ class Checkout_Handler {
 		}
 		
 		if ( ! $is_valid ) {
+			$error_message = Settings_Manager::instance()->get_translation( 'invalid_date_error', 'Invalid reservation date selected.' );
 			$errors->add( 
 				'deliver_by_date_invalid', 
-				__( 'Invalid reservation date selected.', 'advanced-shipping-settings' ),
+				$error_message,
 				array( 'id' => 'deliver_by_date' )
 			);
 		}
@@ -451,9 +510,10 @@ class Checkout_Handler {
 		return $day_name . ', ' . $date_str;
 	}
 
-	public function update_checkout_fragments( array $fragments ): array {
-		$content = $this->get_shipping_date_content();
-		
+	/**
+	 * Get allowed HTML for wp_kses in checkout output.
+	 */
+	private function get_checkout_allowed_html(): array {
 		$allowed_html = wp_kses_allowed_html( 'post' );
 		$allowed_html['input'] = [
 			'type' => true,
@@ -466,9 +526,17 @@ class Checkout_Handler {
 		$allowed_html['label'] = [
 			'class' => true,
 			'for' => true,
+			'data-ass-countdown-target' => true,
+			'data-ass-countdown-prefix' => true,
+			'data-ass-countdown-suffix-hours' => true,
+			'data-ass-countdown-suffix-minutes' => true,
+			'data-ass-countdown-suffix-seconds' => true,
 		];
 		$allowed_html['div'] = [
 			'id' => true,
+			'class' => true,
+		];
+		$allowed_html['span'] = [
 			'class' => true,
 		];
 		$allowed_html['a'] = array_merge( $allowed_html['a'] ?? [], [
@@ -480,6 +548,13 @@ class Checkout_Handler {
 		$allowed_html['hr'] = [
 			'class' => true,
 		];
+		return $allowed_html;
+	}
+
+	public function update_checkout_fragments( array $fragments ): array {
+		$content = $this->get_shipping_date_content();
+		
+		$allowed_html = $this->get_checkout_allowed_html();
 		
 		ob_start();
 		?>

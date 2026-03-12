@@ -27,8 +27,8 @@ class Plugin_Core {
 
 	private function define_constants(): void {
 		if ( ! defined( 'ASS_VERSION' ) ) {
-			define( 'ASS_VERSION', '1.6.3' );
-		}
+			define( 'ASS_VERSION', '1.7.3' );
+		}	
 		if ( ! defined( 'ASS_PATH' ) ) {
 			define( 'ASS_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
 		}
@@ -95,8 +95,19 @@ class Plugin_Core {
 
 	public function enqueue_frontend_assets(): void {
 		wp_enqueue_style( 'ass-frontend-styles', ASS_URL . 'assets/css/frontend-styles.css', [], ASS_VERSION );
+
+		$widget_settings = Settings_Manager::instance()->get_widget_settings();
+		$is_product = function_exists( 'is_product' ) && is_product();
+		$is_checkout = function_exists( 'is_checkout' ) && is_checkout();
+
+		if (
+			( ! empty( $widget_settings['shortcode_countdown_enabled'] ) && $is_product ) ||
+			( ! empty( $widget_settings['checkout_countdown_enabled'] ) && $is_checkout )
+		) {
+			wp_enqueue_script( 'ass-countdown', ASS_URL . 'assets/js/ass-countdown.js', [], ASS_VERSION, true );
+		}
 		
-		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
+		if ( $is_checkout ) {
 			wp_enqueue_script( 'ass-checkout-date-selector', ASS_URL . 'assets/js/checkout-date-selector.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
 			wp_enqueue_script( 'ass-checkout-update', ASS_URL . 'assets/js/checkout-update.js', [ 'jquery', 'wc-checkout' ], ASS_VERSION, true );
 		}
@@ -110,10 +121,21 @@ class Plugin_Core {
 			wp_enqueue_style( 'ass-admin-styles', ASS_URL . 'admin/css/admin-styles.css', [ 'woocommerce_admin_styles' ], ASS_VERSION );
 		}
 		
-		// Enqueue sortable and JS on rules page
+		// Enqueue sortable, flatpickr, and JS on rules page
 		if ( 'advanced-shipping-settings' === $page ) {
+			wp_enqueue_style( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', [], '4.6.13' );
 			wp_enqueue_script( 'sortable', 'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js', [], '1.15.0', true );
-			wp_enqueue_script( 'ass-shipping-rules-admin', ASS_URL . 'admin/js/shipping-rules-admin.js', [ 'sortable', 'jquery' ], ASS_VERSION, true );
+			wp_enqueue_script( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr', [], '4.6.13', true );
+			wp_enqueue_script( 'ass-shipping-rules-admin', ASS_URL . 'admin/js/shipping-rules-admin.js', [ 'sortable', 'flatpickr', 'jquery' ], ASS_VERSION, true );
+			wp_localize_script( 'ass-shipping-rules-admin', 'assSavedStatusTips', [
+				'saved'    => __( 'Saved', 'advanced-shipping-settings' ),
+				'unsaved'  => __( 'Unsaved', 'advanced-shipping-settings' ),
+				'modified' => __( 'Unsaved changes', 'advanced-shipping-settings' ),
+			] );
+			wp_localize_script( 'ass-shipping-rules-admin', 'assVisibilityLabels', [
+				'not_shown'  => __( 'This date is not shown to clients.', 'advanced-shipping-settings' ),
+				'shown_until' => __( 'This date is shown to clients until: %s', 'advanced-shipping-settings' ),
+			] );
 		}
 		
 		// Enqueue media and JS on settings and pickup pages

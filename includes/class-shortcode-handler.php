@@ -177,13 +177,105 @@ class Shortcode_Handler {
 			return;
 		}
 
+		$widget_settings = Settings_Manager::instance()->get_widget_settings();
+		$countdown_enabled = ! empty( $widget_settings['shortcode_countdown_enabled'] );
+		$countdown_config = [
+			'prefix'         => $widget_settings['countdown_prefix'] ?? 'closes in',
+			'suffix_hours'   => $widget_settings['countdown_suffix_hours'] ?? 'h',
+			'suffix_minutes' => $widget_settings['countdown_suffix_minutes'] ?? 'min',
+			'suffix_seconds' => $widget_settings['countdown_suffix_seconds'] ?? 's',
+		];
+
 		$label = Settings_Manager::instance()->get_translation( 'shortcode_rezervuoti', 'Available to reserve:' );
 		echo '<div class="ass-method-dates">';
 		echo '<div class="ass-date-label">' . esc_html( $label ) . '</div>';
 		foreach ( $available_dates as $date_info ) {
-			echo '<div class="ass-date">' . esc_html( $date_info['label'] ) . '</div>';
+			$display = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
+			$countdown_data = $countdown_enabled ? $this->get_countdown_data( $date_info, $countdown_config ) : null;
+
+			if ( $countdown_data ) {
+				echo '<div class="ass-date ass-date-has-countdown" ';
+				echo 'data-ass-countdown-target="' . esc_attr( $countdown_data['iso_target'] ) . '" ';
+				echo 'data-ass-countdown-prefix="' . esc_attr( $countdown_config['prefix'] ) . '" ';
+				echo 'data-ass-countdown-suffix-hours="' . esc_attr( $countdown_config['suffix_hours'] ) . '" ';
+				echo 'data-ass-countdown-suffix-minutes="' . esc_attr( $countdown_config['suffix_minutes'] ) . '" ';
+				echo 'data-ass-countdown-suffix-seconds="' . esc_attr( $countdown_config['suffix_seconds'] ) . '">';
+				echo '<span class="ass-date-text">' . esc_html( $display ) . '</span>';
+				echo '<span class="ass-countdown">' . esc_html( $countdown_data['initial_text'] ) . '</span>';
+				echo '</div>';
+			} else {
+				echo '<div class="ass-date">' . esc_html( $display ) . '</div>';
+			}
 		}
 		echo '</div>';
+	}
+
+	/**
+	 * Compute countdown data for a date with less than 24h until show_until.
+	 * Returns null if countdown should not be shown.
+	 */
+	private function get_countdown_data( array $date_info, array $config ): ?array {
+		$reservation_date = $date_info['date'] ?? '';
+		$show_until       = $date_info['show_until'] ?? '';
+
+		if ( empty( $reservation_date ) ) {
+			return null;
+		}
+
+		$tz = wp_timezone();
+		$now = new \DateTimeImmutable( 'now', $tz );
+
+		if ( ! empty( $show_until ) ) {
+			if ( strpos( $show_until, ' ' ) !== false ) {
+				$target = \DateTimeImmutable::createFromFormat( 'Y-m-d H:i', substr( $show_until, 0, 16 ), $tz );
+			} else {
+				$target = \DateTimeImmutable::createFromFormat( 'Y-m-d', $show_until, $tz )->setTime( 0, 0, 0 );
+			}
+		} else {
+			$target = \DateTimeImmutable::createFromFormat( 'Y-m-d', $reservation_date, $tz )->setTime( 0, 0, 0 );
+		}
+
+		if ( false === $target || $now >= $target ) {
+			return null;
+		}
+
+		$diff = $now->diff( $target );
+		$total_minutes = ( $diff->days * 24 * 60 ) + ( $diff->h * 60 ) + $diff->i;
+
+		if ( $total_minutes >= 24 * 60 ) {
+			return null;
+		}
+
+		$total_seconds = (int) ( ( $diff->days * 24 * 3600 ) + ( $diff->h * 3600 ) + ( $diff->i * 60 ) + $diff->s );
+		$hours   = (int) floor( $total_seconds / 3600 );
+		$minutes = (int) floor( ( $total_seconds % 3600 ) / 60 );
+		$seconds = (int) ( $total_seconds % 60 );
+
+		$initial_text = self::format_countdown_text( $hours, $minutes, $seconds, $config );
+
+		return [
+			'iso_target'   => $target->format( \DateTimeInterface::ATOM ),
+			'initial_text' => $initial_text,
+		];
+	}
+
+	/**
+	 * Format countdown text, omitting zero-value units.
+	 */
+	private static function format_countdown_text( int $hours, int $minutes, int $seconds, array $config ): string {
+		$parts = [];
+		if ( $hours > 0 ) {
+			$parts[] = $hours . $config['suffix_hours'];
+		}
+		if ( $minutes > 0 || $hours > 0 ) {
+			$parts[] = $minutes . $config['suffix_minutes'];
+		}
+		$parts[] = $seconds . $config['suffix_seconds'];
+
+		$text = implode( ' ', $parts );
+		$prefix = $config['prefix'] ?? '';
+
+		return $prefix ? $prefix . ' ' . $text : $text;
 	}
 
 	/**

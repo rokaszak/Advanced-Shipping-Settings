@@ -150,6 +150,62 @@ class Widgets_Page {
 					</tr>
 				</table>
 
+				<hr>
+
+				<h2 class="title"><?php esc_html_e( 'Shipping Info Shortcode', 'advanced-shipping-settings' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Settings for the [advanced_shipping_info] shortcode displayed on product pages.', 'advanced-shipping-settings' ); ?></p>
+				<table class="form-table">
+					<tr>
+						<th><label><?php esc_html_e( 'Shortcode:', 'advanced-shipping-settings' ); ?></label></th>
+						<td>
+							<input type="text" value="[advanced_shipping_info]" readonly class="regular-text" id="ass-shipping-info-shortcode">
+							<button type="button" class="button" onclick="document.getElementById('ass-shipping-info-shortcode').select(); document.execCommand('copy'); this.textContent='<?php esc_attr_e( 'Copied!', 'advanced-shipping-settings' ); ?>'; setTimeout(() => this.textContent='<?php esc_attr_e( 'Copy', 'advanced-shipping-settings' ); ?>', 2000);"><?php esc_html_e( 'Copy', 'advanced-shipping-settings' ); ?></button>
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Enable Countdown Timer (Product Page):', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'When enabled, reservation dates with less than 24 hours until their cutoff will display a live countdown on product pages (e.g. "closes in 6h 23min").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<label>
+								<input type="checkbox" name="widget_settings[shortcode_countdown_enabled]" value="1" <?php checked( $settings['shortcode_countdown_enabled'], true ); ?>>
+								<?php esc_html_e( 'Show countdown for dates closing within 24 hours', 'advanced-shipping-settings' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Enable Countdown Timer (Checkout):', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'When enabled, reservation date radio buttons on the checkout page will also display a live countdown for dates closing within 24 hours.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<label>
+								<input type="checkbox" name="widget_settings[checkout_countdown_enabled]" value="1" <?php checked( $settings['checkout_countdown_enabled'], true ); ?>>
+								<?php esc_html_e( 'Show countdown on checkout date selection', 'advanced-shipping-settings' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Countdown Prefix:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Text shown before the countdown values (e.g. "closes in" or "Užsidaro už").', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="widget_settings[countdown_prefix]" value="<?php echo esc_attr( $settings['countdown_prefix'] ); ?>" class="regular-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Hours Suffix:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Suffix after the hours value (e.g. "h" or "val."). Hours are hidden when 0.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="widget_settings[countdown_suffix_hours]" value="<?php echo esc_attr( $settings['countdown_suffix_hours'] ); ?>" class="small-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Minutes Suffix:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Suffix after the minutes value (e.g. "min" or "min."). Minutes are hidden when 0 and no hours remain.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="widget_settings[countdown_suffix_minutes]" value="<?php echo esc_attr( $settings['countdown_suffix_minutes'] ); ?>" class="small-text">
+						</td>
+					</tr>
+					<tr>
+						<th><label><?php esc_html_e( 'Seconds Suffix:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Suffix after the seconds value (e.g. "s" or "sek."). Always shown as the smallest unit.', 'advanced-shipping-settings' ) ); ?></label></th>
+						<td>
+							<input type="text" name="widget_settings[countdown_suffix_seconds]" value="<?php echo esc_attr( $settings['countdown_suffix_seconds'] ); ?>" class="small-text">
+						</td>
+					</tr>
+				</table>
+
 				<p class="submit">
 					<input type="submit" name="ass_save_widget_settings" class="button button-primary button-large" value="<?php esc_attr_e( 'Save Settings', 'advanced-shipping-settings' ); ?>">
 				</p>
@@ -177,6 +233,12 @@ class Widgets_Page {
 			'use_pre_discount' => ! empty( $raw_settings['use_pre_discount'] ),
 			'hide_no_threshold' => ! empty( $raw_settings['hide_no_threshold'] ),
 			'hide_already_free' => ! empty( $raw_settings['hide_already_free'] ),
+			'shortcode_countdown_enabled' => ! empty( $raw_settings['shortcode_countdown_enabled'] ),
+			'checkout_countdown_enabled' => ! empty( $raw_settings['checkout_countdown_enabled'] ),
+			'countdown_prefix' => sanitize_text_field( $raw_settings['countdown_prefix'] ?? 'closes in' ),
+			'countdown_suffix_hours' => sanitize_text_field( $raw_settings['countdown_suffix_hours'] ?? 'h' ),
+			'countdown_suffix_minutes' => sanitize_text_field( $raw_settings['countdown_suffix_minutes'] ?? 'min' ),
+			'countdown_suffix_seconds' => sanitize_text_field( $raw_settings['countdown_suffix_seconds'] ?? 's' ),
 			'texts' => [
 				'title' => sanitize_text_field( $raw_settings['texts']['title'] ?? 'Nemokamo pristatymo progresas' ),
 				'progress_template' => sanitize_text_field( $raw_settings['texts']['progress_template'] ?? 'Iki nemokamo pristatymo trūksta {remaining} (iš {threshold}).' ),
