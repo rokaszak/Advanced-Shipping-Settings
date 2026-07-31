@@ -385,6 +385,8 @@ class Shipping_Rules_Page {
 	private function get_available_shipping_methods(): array {
 		$methods = [];
 
+		$enabled_in_zones = $this->get_method_ids_enabled_in_zones();
+
 		$shipping_method_classes = WC()->shipping()->load_shipping_methods();
 
 		foreach ( $shipping_method_classes as $method_class ) {
@@ -394,6 +396,15 @@ class Shipping_Rules_Page {
 
 			$method_id = $method_class->id ?? '';
 			if ( empty( $method_id ) ) {
+				continue;
+			}
+
+			// load_shipping_methods() returns registered method *types* (instance_id 0), so it
+			// cannot see a zone instance's Enable/Disable toggle. For zone-capable methods,
+			// require at least one enabled instance. Legacy methods that do not support zones
+			// (e.g. Omniva) are configured globally and never appear in a zone, so keep those.
+			$is_zone_method = method_exists( $method_class, 'supports' ) && $method_class->supports( 'shipping-zones' );
+			if ( $is_zone_method && ! isset( $enabled_in_zones[ $method_id ] ) ) {
 				continue;
 			}
 
@@ -410,6 +421,32 @@ class Shipping_Rules_Page {
 		}
 
 		return $methods;
+	}
+
+	/**
+	 * Method IDs that have at least one enabled shipping zone instance.
+	 */
+	private function get_method_ids_enabled_in_zones(): array {
+		$enabled = [];
+
+		$zone_ids   = array_keys( \WC_Shipping_Zones::get_zones() );
+		$zone_ids[] = 0; // "Rest of the World" is not returned by get_zones().
+
+		foreach ( $zone_ids as $zone_id ) {
+			$zone = \WC_Shipping_Zones::get_zone( $zone_id );
+			if ( ! $zone ) {
+				continue;
+			}
+
+			// true = enabled instances only; resolves the per-instance settings option.
+			foreach ( $zone->get_shipping_methods( true ) as $instance ) {
+				if ( is_object( $instance ) && ! empty( $instance->id ) ) {
+					$enabled[ $instance->id ] = true;
+				}
+			}
+		}
+
+		return $enabled;
 	}
 
 	/**
@@ -435,7 +472,11 @@ class Shipping_Rules_Page {
 		}
 
 		$raw_rules = isset( $_POST['rules'] ) ? (array) $_POST['rules'] : [];
-		$sanitized_rules = [];
+
+		// Seed from the stored rules so methods that are not currently rendered (disabled
+		// zone instance, hidden, not in a zone) keep their config instead of being dropped.
+		// Posted methods overwrite their own key below.
+		$sanitized_rules = Settings_Manager::instance()->get_shipping_rules();
 
 		foreach ( $raw_rules as $method_id => $data ) {
 			$type = sanitize_text_field( $data['type'] ?? 'asap' );

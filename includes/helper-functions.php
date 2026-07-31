@@ -85,37 +85,28 @@ function ass_get_current_shipping_rate_and_rule(): ?array {
  * @param WC_Shipping_Rate $rate The shipping rate object.
  */
 function ass_get_shipping_method_threshold( $rate ): float {
-	error_log('ASS: ass_get_shipping_method_threshold called');
 	if ( ! $rate || ! is_a( $rate, 'WC_Shipping_Rate' ) ) {
-		error_log('ASS: Rate is invalid or not WC_Shipping_Rate');
 		return 0.0;
 	}
 
 	// Get method instance using WooCommerce API
 	if ( ! $rate->instance_id ) {
-		error_log('ASS: No instance_id found');
 		// Check Omniva settings even without instance_id (Omniva uses global settings)
 		$method_id = $rate->method_id ?? '';
 		if ( preg_match( '/omniva/i', $method_id ) ) {
-			error_log('ASS: Omniva method detected without instance_id, checking Omniva settings');
 			$omniva_threshold = ass_get_omniva_threshold( $rate );
 			if ( $omniva_threshold > 0 ) {
 				return (float) apply_filters( 'ass_shipping_method_threshold', $omniva_threshold, $rate, null );
 			}
 		}
-		error_log('ASS: No instance_id and not Omniva, returning early');
 		// Allow filter for custom methods without instance_id
 		return (float) apply_filters( 'ass_shipping_method_threshold', 0.0, $rate );
 	}
 
-	error_log('ASS: Instance ID exists: ' . $rate->instance_id);
 	$method = \WC_Shipping_Zones::get_shipping_method( $rate->instance_id );
 	if ( ! $method || ! is_a( $method, 'WC_Shipping_Method' ) ) {
-		error_log('ASS: Method not found or invalid for instance_id: ' . $rate->instance_id);
-		error_log('ASS: Method object: ' . print_r($method, true));
 		return 0.0;
 	}
-	error_log('ASS: Method found: ' . get_class($method));
 
 	// Check standard WooCommerce option keys
 	// Get instance settings safely (some custom methods may not have get_instance_settings())
@@ -163,10 +154,6 @@ function ass_get_shipping_method_threshold( $rate ): float {
 
 	// Check Omniva settings (minimal support without special handling)
 	$method_id = $rate->method_id ?? '';
-	error_log('ASS: Rate ID: ' . $rate->get_id());
-	error_log('ASS: Method ID: ' . $method_id);
-	error_log('ASS: Instance ID: ' . ($rate->instance_id ?? 'N/A'));
-	error_log('ASS: Rate object: ' . print_r($rate, true));
 	if ( preg_match( '/omniva/i', $method_id ) ) {
 		$omniva_threshold = ass_get_omniva_threshold( $rate );
 		if ( $omniva_threshold > 0 ) {

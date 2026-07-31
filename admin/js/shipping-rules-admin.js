@@ -199,13 +199,27 @@ jQuery(document).ready(function($) {
 
     initSortable();
 
+    // Next free row index, derived from the highest existing data-index rather than the
+    // row count. Removing a row leaves a gap, so the count would collide with a surviving
+    // row: both would post rules[...][dates][N][tags][] and PHP would merge them into one
+    // date (duplicated tags), while the colliding [date]/[label] fields silently overwrite
+    // each other and lose a row. Gaps are fine - PHP re-packs the array on save.
+    function nextRowIndex($container, rowSelector) {
+        var max = -1;
+        $container.find(rowSelector).each(function() {
+            var idx = parseInt($(this).attr('data-index'), 10);
+            if (!isNaN(idx) && idx > max) max = idx;
+        });
+        return max + 1;
+    }
+
     // Add Date Row
     $(document).on('click', '.add-date-row', function() {
         var $repeater = $(this).closest('.ass-dates-repeater');
         var $container = $repeater.find('.ass-dates-container');
         var methodId = $repeater.data('method-id');
-        var nextIndex = $container.find('.ass-date-row').length;
-        
+        var nextIndex = nextRowIndex($container, '.ass-date-row');
+
         var template = $('#ass-date-row-template').html();
         var html = template.replace(/{index}/g, nextIndex).replace(/{method_id}/g, methodId);
         
@@ -229,7 +243,7 @@ jQuery(document).ready(function($) {
             var $repeater = $row.closest('.ass-dates-repeater');
             var $container = $repeater.find('.ass-dates-container');
             var methodId = $repeater.data('method-id');
-            var nextIndex = $container.find('.ass-date-row').length;
+            var nextIndex = nextRowIndex($container, '.ass-date-row');
             var template = $('#ass-date-row-template').html();
             var html = template.replace(/{index}/g, nextIndex).replace(/{method_id}/g, methodId);
             $container.append(html);
@@ -259,7 +273,7 @@ jQuery(document).ready(function($) {
             var $repeater = $row.closest('.ass-priority-days-repeater');
             var $container = $repeater.find('.ass-priority-days-container');
             var methodId = $repeater.data('method-id');
-            var nextIndex = $container.find('.ass-priority-day-row').length;
+            var nextIndex = nextRowIndex($container, '.ass-priority-day-row');
             var template = $('#ass-priority-day-row-template').html();
             var html = template.replace(/{index}/g, nextIndex).replace(/{method_id}/g, methodId);
             $container.append(html);
@@ -287,8 +301,8 @@ jQuery(document).ready(function($) {
         var $repeater = $(this).closest('.ass-priority-days-repeater');
         var $container = $repeater.find('.ass-priority-days-container');
         var methodId = $repeater.data('method-id');
-        var nextIndex = $container.find('.ass-priority-day-row').length;
-        
+        var nextIndex = nextRowIndex($container, '.ass-priority-day-row');
+
         var template = $('#ass-priority-day-row-template').html();
         var html = template.replace(/{index}/g, nextIndex).replace(/{method_id}/g, methodId);
         
