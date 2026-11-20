@@ -139,7 +139,7 @@ class Hooks {
 		$pickup_locations = Settings_Manager::instance()->get_pickup_locations();
 
 		foreach ( $pickup_locations as $location ) {
-			if ( empty( $location['method_id'] ) ) {
+			if ( empty( $location['method_id'] ) || ! preg_match( '/^[A-Za-z0-9_]+$/', (string) $location['method_id'] ) ) {
 				continue;
 			}
 			$methods[ $location['method_id'] ] = 'ASS\Pickup_Shipping_Method_' . $location['method_id'];
@@ -155,14 +155,17 @@ class Hooks {
 		$pickup_locations = Settings_Manager::instance()->get_pickup_locations();
 
 		foreach ( $pickup_locations as $location ) {
-			$method_id = $location['method_id'];
-			$name      = $location['name'];
+			$method_id = isset( $location['method_id'] ) ? (string) $location['method_id'] : '';
+			if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $method_id ) ) {
+				continue;
+			}
+			$name       = var_export( isset( $location['name'] ) ? (string) $location['name'] : '', true );
 			$class_name = 'Pickup_Shipping_Method_' . $method_id;
 
 			if ( ! class_exists( 'ASS\\' . $class_name ) ) {
 				$eval_code = "namespace ASS; class $class_name extends Pickup_Shipping_Method { 
 					public function __construct(\$instance_id = 0) { 
-						parent::__construct(\$instance_id, '$method_id', '$name'); 
+						parent::__construct(\$instance_id, '$method_id', $name); 
 					} 
 				}";
 				eval( $eval_code );

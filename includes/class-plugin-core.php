@@ -27,7 +27,7 @@ class Plugin_Core {
 
 	private function define_constants(): void {
 		if ( ! defined( 'ASS_VERSION' ) ) {
-			define( 'ASS_VERSION', '1.7.5' );
+			define( 'ASS_VERSION', '1.7.14' );
 		}	
 		if ( ! defined( 'ASS_PATH' ) ) {
 			define( 'ASS_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
@@ -49,6 +49,14 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-shortcode-handler.php';
 		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
 		require_once ASS_PATH . 'includes/class-widget-handler.php';
+		require_once ASS_PATH . 'includes/class-pickup-helper.php';
+		require_once ASS_PATH . 'includes/class-qr-encoder.php';
+		require_once ASS_PATH . 'includes/class-pickup-code.php';
+		require_once ASS_PATH . 'includes/class-sms-text.php';
+		require_once ASS_PATH . 'includes/class-bulkgate-client.php';
+		require_once ASS_PATH . 'includes/class-pickup-sms.php';
+		require_once ASS_PATH . 'includes/class-pickup-rest-api.php';
+		require_once ASS_PATH . 'includes/emails/class-email-ready-for-pickup-texts.php';
 		require_once ASS_PATH . 'includes/class-ready-for-pickup.php';
 
 		if ( is_admin() ) {
@@ -57,6 +65,9 @@ class Plugin_Core {
 			require_once ASS_PATH . 'admin/class-plugin-settings-page.php';
 			require_once ASS_PATH . 'admin/class-pickup-locations-page.php';
 			require_once ASS_PATH . 'admin/class-widgets-page.php';
+			require_once ASS_PATH . 'admin/class-pickup-settings-page.php';
+			require_once ASS_PATH . 'admin/class-pickup-orders-page.php';
+			require_once ASS_PATH . 'admin/class-pickup-dialog.php';
 		}
 	}
 
@@ -78,6 +89,8 @@ class Plugin_Core {
 		Shortcode_Handler::instance();
 		Widget_Handler::instance();
 		Ready_For_Pickup::instance();
+		Pickup_Code::instance();
+		Pickup_Rest_Api::instance();
 
 		if ( is_admin() ) {
 			Admin_Menu::instance();
@@ -85,6 +98,9 @@ class Plugin_Core {
 			Plugin_Settings_Page::instance();
 			Pickup_Locations_Page::instance();
 			Widgets_Page::instance();
+			Pickup_Settings_Page::instance();
+			Pickup_Orders_Page::instance();
+			Pickup_Dialog::instance();
 		}
 	}
 

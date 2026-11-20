@@ -59,7 +59,7 @@ class Checkout_Handler {
 			if ( ! empty( $available_dates ) ) {
 				$options = [];
 				foreach ( $available_dates as $date_info ) {
-					$options[ $date_info['date'] ] = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
+					$options[ $date_info['date'] ] = Pickup_Helper::date_info_label( $date_info );
 				}
 				
 				$prompt = Settings_Manager::instance()->get_translation( 'reservation_prompt', 'Select a reservation date:' );
@@ -271,7 +271,7 @@ class Checkout_Handler {
 
 		foreach ( $available_dates as $date_info ) {
 			$date  = $date_info['date'];
-			$label = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
+			$label = Pickup_Helper::date_info_label( $date_info );
 			$countdown_data = $countdown_enabled ? $this->get_countdown_data( $date_info, $countdown_config ) : null;
 
 			if ( $countdown_data ) {

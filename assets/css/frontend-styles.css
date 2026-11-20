@@ -258,3 +258,40 @@
     opacity: 0.95;
     line-height: 1.4;
 }
+
+.ass-pickup-code-card {
+	max-width: 420px;
+	margin: 0 0 24px;
+	padding: 24px 16px;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	background: #ffffff;
+	text-align: center;
+}
+
+.ass-pickup-code-card p {
+	margin: 0;
+}
+
+.ass-pickup-code-label,
+.ass-pickup-code-hint {
+	font-size: 14px;
+	color: #636363;
+}
+
+.ass-pickup-code-value {
+	padding: 8px 0 16px 8px;
+	font-size: 44px;
+	font-weight: 700;
+	line-height: 1.1;
+	letter-spacing: 8px;
+	color: #1e1e1e;
+}
+
+.ass-pickup-code-qr svg {
+	display: block;
+	width: 200px;
+	max-width: 100%;
+	height: auto;
+	margin: 0 auto 12px;
+}

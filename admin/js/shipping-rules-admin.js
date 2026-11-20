@@ -254,6 +254,11 @@ jQuery(document).ready(function($) {
             $newRow.find('input[name*="[dates][' + nextIndex + '][label]"]').val($row.find('input[name*="[dates][' + srcIdx + '][label]"]').val());
             $newRow.find('input[name*="[dates][' + nextIndex + '][show_until_date]"]').val($row.find('input[name*="[dates][' + srcIdx + '][show_until_date]"]').val());
             $newRow.find('input[name*="[dates][' + nextIndex + '][show_until_time]"]').val($row.find('input[name*="[dates][' + srcIdx + '][show_until_time]"]').val() || '23:59');
+            $newRow.find('input[name*="[dates][' + nextIndex + '][time_from]"]').val($row.find('input[name*="[dates][' + srcIdx + '][time_from]"]').val() || '');
+            $newRow.find('input[name*="[dates][' + nextIndex + '][time_to]"]').val($row.find('input[name*="[dates][' + srcIdx + '][time_to]"]').val() || '');
+            var pickupHoursOn = $row.find('.ass-pickup-hours-toggle').prop('checked');
+            $newRow.find('.ass-pickup-hours-toggle').prop('checked', pickupHoursOn);
+            $newRow.find('.ass-pickup-hours-group input.ass-flatpickr-time').prop('disabled', !pickupHoursOn);
             var $srcDrop = $row.find('.ass-tag-dropzone');
             var $tgtDrop = $newRow.find('.ass-tag-dropzone');
             $srcDrop.find('.ass-tag-pill').each(function() {
@@ -628,6 +633,9 @@ jQuery(document).ready(function($) {
     });
     $(document).on('click', '.ass-duplicate-row', function() {
         setTimeout(initAssDatePickers, 100);
+    });
+    $(document).on('change', '.ass-pickup-hours-toggle', function() {
+        $(this).closest('.ass-pickup-hours-group').find('input.ass-flatpickr-time').prop('disabled', !this.checked);
     });
 });
 

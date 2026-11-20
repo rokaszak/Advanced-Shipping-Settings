@@ -231,6 +231,15 @@ class Shipping_Rules_Page {
 																			<input type="text" class="ass-flatpickr-time" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][show_until_time]" value="<?php echo esc_attr( $show_until_time ); ?>" placeholder="HH:MM">
 																		</div>
 																	</div>
+																	<div class="ass-input-group ass-pickup-hours-group">
+																		<label><?php esc_html_e( 'Pickup hours:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. The hours during which the order can be picked up on this date, for example 18:00 to 20:00. Shown to the customer at checkout, in emails and in the SMS.', 'advanced-shipping-settings' ) ); ?></label>
+																		<?php $pickup_time_from = Pickup_Helper::sanitize_time( $date_info['time_from'] ?? '' ); ?>
+																		<div class="ass-date-time-inputs">
+																			<input type="checkbox" class="ass-pickup-hours-toggle" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][time_enabled]" value="1" aria-label="<?php esc_attr_e( 'Set pickup hours', 'advanced-shipping-settings' ); ?>" <?php checked( '' !== $pickup_time_from ); ?>>
+																			<input type="text" class="ass-flatpickr-time" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][time_from]" value="<?php echo esc_attr( $pickup_time_from ); ?>" placeholder="HH:MM" <?php disabled( '' === $pickup_time_from ); ?>>
+																			<input type="text" class="ass-flatpickr-time" name="rules[<?php echo esc_attr( $method_id ); ?>][dates][<?php echo $index; ?>][time_to]" value="<?php echo esc_attr( Pickup_Helper::sanitize_time( $date_info['time_to'] ?? '' ) ); ?>" placeholder="HH:MM" <?php disabled( '' === $pickup_time_from ); ?>>
+																		</div>
+																	</div>
 																</div>
 															</div>
 															<div class="ass-field">
@@ -325,6 +334,14 @@ class Shipping_Rules_Page {
 							<div class="ass-date-time-inputs">
 								<input type="text" class="ass-flatpickr-date" name="rules[{method_id}][dates][{index}][show_until_date]" value="" placeholder="YYYY-MM-DD">
 								<input type="text" class="ass-flatpickr-time" name="rules[{method_id}][dates][{index}][show_until_time]" value="23:59" placeholder="HH:MM">
+							</div>
+						</div>
+						<div class="ass-input-group ass-pickup-hours-group">
+							<label><?php esc_html_e( 'Pickup hours:', 'advanced-shipping-settings' ); ?> <?php echo \ASS\ass_help_tip( __( 'Optional. The hours during which the order can be picked up on this date, for example 18:00 to 20:00. Shown to the customer at checkout, in emails and in the SMS.', 'advanced-shipping-settings' ) ); ?></label>
+							<div class="ass-date-time-inputs">
+								<input type="checkbox" class="ass-pickup-hours-toggle" name="rules[{method_id}][dates][{index}][time_enabled]" value="1" aria-label="<?php esc_attr_e( 'Set pickup hours', 'advanced-shipping-settings' ); ?>">
+								<input type="text" class="ass-flatpickr-time" name="rules[{method_id}][dates][{index}][time_from]" value="" placeholder="HH:MM" disabled>
+								<input type="text" class="ass-flatpickr-time" name="rules[{method_id}][dates][{index}][time_to]" value="" placeholder="HH:MM" disabled>
 							</div>
 						</div>
 					</div>
@@ -511,10 +528,15 @@ class Shipping_Rules_Page {
 						$show_until .= ' ' . ( strlen( $show_until_time ) > 5 ? substr( $show_until_time, 0, 5 ) : $show_until_time );
 					}
 
+					$time_from = ! empty( $date_info['time_enabled'] ) ? Pickup_Helper::sanitize_time( $date_info['time_from'] ?? '' ) : '';
+					$time_to   = '' !== $time_from ? Pickup_Helper::sanitize_time( $date_info['time_to'] ?? '' ) : '';
+
 					$sanitized_dates[] = [
 						'date'       => sanitize_text_field( $date_info['date'] ),
 						'label'      => sanitize_text_field( $date_info['label'] ?? '' ),
 						'show_until' => $show_until,
+						'time_from'  => $time_from,
+						'time_to'    => $time_to,
 						'tags'       => isset( $date_info['tags'] ) ? array_map( 'absint', (array) $date_info['tags'] ) : [],
 					];
 				}

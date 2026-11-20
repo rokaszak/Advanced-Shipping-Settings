@@ -260,6 +260,20 @@
     flex: 0 0 auto;
 }
 
+.ass-pickup-hours-group {
+    padding-left: 15px;
+    border-left: 1px solid #c3c4c7;
+}
+
+.ass-pickup-hours-group input.ass-pickup-hours-toggle {
+    flex: 0 0 auto;
+    margin: 0 4px 0 0;
+}
+
+.ass-pickup-hours-group input.ass-flatpickr-time:disabled {
+    opacity: 0.45;
+}
+
 .ass-sidebar-save {
     margin-top: 20px;
     padding-top: 15px;

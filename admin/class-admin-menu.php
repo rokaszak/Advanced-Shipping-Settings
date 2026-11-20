@@ -67,6 +67,15 @@ class Admin_Menu {
 
 		add_submenu_page(
 			'advanced-shipping-settings',
+			__( 'Pickup & SMS', 'advanced-shipping-settings' ),
+			__( 'Pickup & SMS', 'advanced-shipping-settings' ),
+			Pickup_Settings_Page::CAPABILITY,
+			Pickup_Settings_Page::SLUG,
+			[ Pickup_Settings_Page::instance(), 'render' ]
+		);
+
+		add_submenu_page(
+			'advanced-shipping-settings',
 			__( 'Widgets', 'advanced-shipping-settings' ),
 			__( 'Widgets', 'advanced-shipping-settings' ),
 			'manage_woocommerce',

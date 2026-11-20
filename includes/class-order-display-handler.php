@@ -34,6 +34,7 @@ class Order_Display_Handler {
 		
 		// Customer order details display
 		add_action( 'woocommerce_order_details_after_order_table', [ $this, 'display_customer_order_details' ], 10, 1 );
+		add_action( 'woocommerce_order_details_before_order_table', [ $this, 'display_customer_pickup_code' ], 5, 1 );
 	}
 
 	/**
@@ -91,6 +92,11 @@ class Order_Display_Handler {
 			<label for="_ass_deliver_by_date"><strong><?php esc_html_e( 'Deliver By Date:', 'advanced-shipping-settings' ); ?></strong></label>
 			<input type="text" id="_ass_deliver_by_date" name="_ass_deliver_by_date" value="<?php echo esc_attr( $deliver_by_date ); ?>" class="regular-text" placeholder="YYYY-MM-DD">
 		</p>
+		<p class="form-field">
+			<label for="_ass_pickup_time"><strong><?php esc_html_e( 'Pickup hours:', 'advanced-shipping-settings' ); ?></strong></label>
+			<input type="text" id="_ass_pickup_time" name="_ass_pickup_time" value="<?php echo esc_attr( Pickup_Helper::get_pickup_time( $order ) ); ?>" class="regular-text" placeholder="HH:MM-HH:MM">
+			<input type="hidden" name="_ass_pickup_time_original" value="<?php echo esc_attr( Pickup_Helper::get_pickup_time( $order ) ); ?>">
+		</p>
 		<?php
 	}
 
@@ -135,6 +141,14 @@ class Order_Display_Handler {
 			}
 		}
 
+		if ( isset( $_POST['_ass_pickup_time'], $_POST['_ass_pickup_time_original'] ) ) {
+			$pickup_time = Pickup_Helper::sanitize_time_window( sanitize_text_field( wp_unslash( $_POST['_ass_pickup_time'] ) ) );
+			$original    = Pickup_Helper::sanitize_time_window( sanitize_text_field( wp_unslash( $_POST['_ass_pickup_time_original'] ) ) );
+			if ( $pickup_time !== $original ) {
+				$order->update_meta_data( Pickup_Helper::META_TIME, $pickup_time );
+			}
+		}
+
 		$order->save();
 	}
 
@@ -155,6 +169,11 @@ class Order_Display_Handler {
 		$delivery_text = Settings_Manager::instance()->get_order_delivery_text();
 		$display_text = $delivery_text . ' ' . $formatted_date;
 
+		$pickup_time = Pickup_Helper::get_pickup_time_display( $order );
+		if ( '' !== $pickup_time ) {
+			$display_text .= ', ' . $pickup_time;
+		}
+
 		if ( $plain_text ) {
 			echo "\n" . esc_html( $display_text ) . "\n";
 			
@@ -174,6 +193,37 @@ class Order_Display_Handler {
 		}
 	}
 
+	public function display_customer_pickup_code( WC_Order $order ): void {
+		if ( Pickup_Helper::STATUS_READY !== $order->get_status() ) {
+			return;
+		}
+
+		$viewer_id = get_current_user_id();
+		if ( ! $viewer_id || ( (int) $order->get_customer_id() !== $viewer_id && ! current_user_can( 'edit_shop_orders' ) ) ) {
+			return;
+		}
+
+		$code = Pickup_Code::get_code( $order );
+		if ( '' === $code ) {
+			return;
+		}
+
+		$label = Email_Ready_For_Pickup_Texts::code_label();
+		$hint  = Email_Ready_For_Pickup_Texts::code_hint();
+		?>
+		<div class="ass-pickup-code-card">
+			<?php if ( '' !== $label ) : ?>
+				<p class="ass-pickup-code-label"><?php echo esc_html( $label ); ?></p>
+			<?php endif; ?>
+			<p class="ass-pickup-code-value"><?php echo esc_html( $code ); ?></p>
+			<div class="ass-pickup-code-qr"><?php echo Pickup_Code::qr_svg( $order, 200 ); ?></div>
+			<?php if ( '' !== $hint ) : ?>
+				<p class="ass-pickup-code-hint"><?php echo esc_html( $hint ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
 	/**
 	 * Display deliver_by_date in customer order details.
 	 */
@@ -190,6 +240,11 @@ class Order_Display_Handler {
 
 		$delivery_text = Settings_Manager::instance()->get_order_delivery_text();
 		$display_text = $delivery_text . ' ' . $formatted_date;
+
+		$pickup_time = Pickup_Helper::get_pickup_time_display( $order );
+		if ( '' !== $pickup_time ) {
+			$display_text .= ', ' . $pickup_time;
+		}
 
 		?>
 		<div class="ass-order-delivery-info">

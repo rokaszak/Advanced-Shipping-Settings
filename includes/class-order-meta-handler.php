@@ -37,6 +37,10 @@ class Order_Meta_Handler {
 
 		$rule = $shipping_data['rule'];
 
+		if ( in_array( $rule['type'] ?? '', [ 'asap', 'by_date' ], true ) ) {
+			$order->update_meta_data( Pickup_Helper::META_RULE_TYPE, $rule['type'] );
+		}
+
 		if ( 'asap' === $rule['type'] ) {
 			// Calculate both dates server-side (no user input, fully secure)
 			$holidays = Settings_Manager::instance()->get_holiday_dates();
@@ -66,6 +70,11 @@ class Order_Meta_Handler {
 				$order->update_meta_data( 'deliver_by_date', $deliver_by_date );
 				// For reservation-based methods, ship_by_date equals deliver_by_date
 				$order->update_meta_data( 'ship_by_date', $deliver_by_date );
+
+				$pickup_time = Pickup_Helper::rule_time_window( $rule, $deliver_by_date );
+				if ( '' !== $pickup_time ) {
+					$order->update_meta_data( Pickup_Helper::META_TIME, $pickup_time );
+				}
 			}
 		}
 	}

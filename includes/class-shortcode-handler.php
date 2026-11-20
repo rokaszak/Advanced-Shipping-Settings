@@ -190,7 +190,7 @@ class Shortcode_Handler {
 		echo '<div class="ass-method-dates">';
 		echo '<div class="ass-date-label">' . esc_html( $label ) . '</div>';
 		foreach ( $available_dates as $date_info ) {
-			$display = ! empty( $date_info['label'] ) ? $date_info['label'] : $date_info['date'];
+			$display = Pickup_Helper::date_info_label( $date_info );
 			$countdown_data = $countdown_enabled ? $this->get_countdown_data( $date_info, $countdown_config ) : null;
 
 			if ( $countdown_data ) {

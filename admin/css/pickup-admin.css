@@ -1,0 +1,768 @@
+.order-status.status-ready-for-pickup {
+	background: #e5d9f2;
+	color: #4a2a75;
+}
+
+.ass-pickup-orders .tablenav.top {
+	height: auto;
+	margin-bottom: 10px;
+}
+
+.ass-pickup-orders .tablenav.top .ass-pickup-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 6px;
+	overflow: visible;
+}
+
+.ass-pickup-orders .ass-pickup-filters select {
+	float: none;
+	margin: 0;
+	max-width: 260px;
+}
+
+.ass-pickup-orders .ass-pickup-filters .button {
+	margin: 0;
+}
+
+.ass-pickup-orders .ass-pickup-filters .select2-container {
+	width: 420px !important;
+	max-width: 100%;
+	margin: 0;
+}
+
+.ass-pickup-orders .ass-pickup-filters .select2-container .select2-selection--multiple {
+	min-height: 30px;
+}
+
+.ass-pickup-orders .ass-pickup-clear {
+	line-height: 30px;
+	margin-left: 4px;
+}
+
+.ass-pickup-orders .wp-list-table .column-order {
+	width: 11%;
+}
+
+.ass-pickup-orders .wp-list-table .column-pickup {
+	width: 12%;
+}
+
+.ass-pickup-orders .wp-list-table .column-shipping {
+	width: 21%;
+}
+
+.ass-pickup-orders .wp-list-table .column-products {
+	width: 24%;
+}
+
+.ass-pickup-orders .wp-list-table td.column-products {
+	padding-top: 18px;
+	padding-bottom: 18px;
+}
+
+.ass-pickup-orders .wp-list-table .column-customer {
+	width: 18%;
+}
+
+.ass-pickup-orders .wp-list-table .column-pickup_sms {
+	width: 14%;
+}
+
+.ass-pickup-orders .ass-pickup-phone {
+	white-space: nowrap;
+}
+
+.ass-pickup-orders .ass-pickup-email {
+	overflow-wrap: anywhere;
+}
+
+.ass-pickup-orders .ass-pickup-items {
+	margin: 0;
+}
+
+.ass-pickup-orders .ass-pickup-items li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 6px;
+}
+
+.ass-pickup-orders .ass-pickup-items li:last-child {
+	margin-bottom: 0;
+}
+
+.ass-pickup-orders .ass-pickup-item-thumb {
+	flex: 0 0 32px;
+	width: 32px;
+	height: 32px;
+	border-radius: 3px;
+	background: #f0f0f1;
+	overflow: hidden;
+}
+
+.ass-pickup-orders .ass-pickup-item-thumb img {
+	display: block;
+	width: 32px;
+	height: 32px;
+	object-fit: cover;
+}
+
+.ass-pickup-orders .ass-pickup-item-text {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.ass-pickup-orders .ass-pickup-item-qty {
+	white-space: nowrap;
+}
+
+.ass-pickup-orders .ass-pickup-code {
+	margin-bottom: 4px;
+}
+
+.ass-pickup-orders .ass-pickup-order-status {
+	margin-top: 8px;
+}
+
+.ass-pickup-orders .ass-pickup-hours {
+	display: inline-block;
+	margin-top: 2px;
+	color: #50575e;
+}
+
+.ass-pickup-orders .ass-pickup-method {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ass-pickup-orders .ass-pickup-method-logo {
+	display: flex;
+	flex: 0 0 80px;
+	align-items: center;
+	justify-content: flex-start;
+	width: 80px;
+	min-height: 32px;
+}
+
+.ass-pickup-orders .ass-pickup-method-logo img {
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: 80px;
+	max-height: 32px;
+}
+
+.ass-pickup-orders .ass-pickup-method-text {
+	min-width: 0;
+}
+
+.ass-pickup-orders .ass-pickup-method-text > span {
+	display: block;
+}
+
+.ass-pickup-orders .ass-pickup-method-name {
+	font-weight: 600;
+}
+
+.ass-pickup-orders .wp-list-table td {
+	vertical-align: top;
+}
+
+.ass-pickup-orders .wp-list-table .order-status {
+	display: inline-flex;
+	line-height: 2.2em;
+	border-radius: 4px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+	margin: 0;
+	cursor: inherit;
+	white-space: nowrap;
+	max-width: 100%;
+}
+
+.ass-pickup-orders .wp-list-table .order-status > span {
+	margin: 0 1em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ass-pickup-code {
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: 1px;
+}
+
+.ass-pickup-bad-phone {
+	color: #b32d2e;
+}
+
+.ass-sms-status {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	line-height: 1.6;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.ass-sms-status-sent {
+	background: #c6e1c6;
+	color: #2c4700;
+}
+
+.ass-sms-status-failed,
+.ass-sms-status-no_phone {
+	background: #eba3a3;
+	color: #570000;
+}
+
+.ass-sms-status-not_sent {
+	background: #f8dda7;
+	color: #573b00;
+}
+
+.ass-pickup-box-label {
+	margin: 0;
+	color: #646970;
+}
+
+.ass-pickup-box-code {
+	margin: 0 0 12px;
+	font-size: 28px;
+	font-weight: 600;
+	letter-spacing: 4px;
+	line-height: 1.2;
+}
+
+.ass-pickup-settings .ass-sms-test-result {
+	margin-left: 8px;
+}
+
+.ass-pickup-settings .ass-sms-test-result.is-ok {
+	color: #007017;
+}
+
+.ass-pickup-settings .ass-sms-test-result.is-error {
+	color: #b32d2e;
+}
+
+.ass-pickup-settings .ass-pickup-api-table {
+	max-width: 1100px;
+}
+
+.ass-pickup-settings .ass-pickup-api-table code {
+	word-break: break-all;
+}
+
+body.ass-modal-open {
+	overflow: hidden;
+}
+
+.ass-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 160000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	background: rgba(0, 0, 0, 0.7);
+}
+
+.ass-modal {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 860px;
+	max-height: 100%;
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+}
+
+.ass-export-modal {
+	max-width: 460px;
+}
+
+.ass-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 8px 0 24px;
+	min-height: 56px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.ass-modal-header h2 {
+	margin: 0;
+	font-size: 18px;
+	line-height: 1.4;
+}
+
+.ass-modal-close {
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #646970;
+	cursor: pointer;
+}
+
+.ass-modal-close:hover,
+.ass-modal-close:focus {
+	color: #135e96;
+}
+
+.ass-modal-close:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.ass-modal-body {
+	padding: 16px 24px;
+	overflow-y: auto;
+}
+
+.ass-modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 12px 24px;
+	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
+	border-radius: 0 0 4px 4px;
+}
+
+.ass-modal-footer:empty {
+	display: none;
+}
+
+.ass-modal-summary {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.ass-modal-error {
+	color: #b32d2e;
+}
+
+.ass-modal-notice {
+	margin: 0 0 12px !important;
+}
+
+.ass-modal-list {
+	margin: 4px 0 8px 18px;
+	list-style: disc;
+	max-height: 140px;
+	overflow-y: auto;
+}
+
+.ass-modal-footnote {
+	margin: 4px 0 0;
+}
+
+.ass-sms-group {
+	margin: 0 0 16px;
+	padding: 16px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.ass-sms-group-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+}
+
+.ass-sms-group-count {
+	margin-left: 8px;
+	font-weight: 400;
+	color: #646970;
+}
+
+.ass-sms-columns {
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+}
+
+.ass-sms-editor {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.ass-sms-preview {
+	flex: 0 0 280px;
+}
+
+.ass-sms-label {
+	display: block;
+	margin: 0 0 6px;
+	font-weight: 600;
+}
+
+.ass-sms-textarea {
+	width: 100%;
+	min-height: 110px;
+	resize: vertical;
+}
+
+.ass-sms-variables {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	margin: 8px 0;
+}
+
+.ass-sms-variables-label {
+	margin-right: 4px;
+	color: #646970;
+}
+
+.ass-sms-counter {
+	margin: 0 0 6px;
+	color: #646970;
+}
+
+.ass-sms-counter.is-over {
+	color: #996800;
+}
+
+.ass-sms-warning {
+	margin: 0 0 4px;
+	color: #996800;
+}
+
+.ass-sms-warning.is-error {
+	color: #b32d2e;
+}
+
+.ass-phone {
+	border: 1px solid #c3c4c7;
+	border-radius: 18px;
+	background: #f6f7f7;
+	overflow: hidden;
+}
+
+.ass-phone-top {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	background: #fff;
+	border-bottom: 1px solid #dcdcde;
+	font-weight: 600;
+}
+
+.ass-phone-avatar {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: #dcdcde;
+	color: #fff;
+	font-size: 20px;
+	line-height: 28px;
+	text-align: center;
+}
+
+.ass-phone-screen {
+	min-height: 120px;
+	padding: 14px;
+}
+
+.ass-phone-bubble {
+	display: inline-block;
+	max-width: 100%;
+	padding: 9px 12px;
+	border-radius: 16px 16px 16px 4px;
+	background: #e4e6eb;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.4;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.ass-phone-bubble.is-empty {
+	display: none;
+}
+
+.ass-sms-example {
+	margin: 8px 0 2px;
+	color: #646970;
+}
+
+.ass-modal-progress-text {
+	margin: 8px 0;
+}
+
+.ass-modal-progress {
+	height: 12px;
+	border-radius: 6px;
+	background: #dcdcde;
+	overflow: hidden;
+}
+
+.ass-modal-progress-fill {
+	width: 0;
+	height: 100%;
+	background: #2271b1;
+	transition: width 0.2s ease;
+}
+
+.ass-modal-results {
+	margin: 0 0 12px;
+}
+
+.ass-modal-results li {
+	margin: 0 0 6px;
+	font-size: 14px;
+}
+
+.ass-modal-results .is-error {
+	color: #b32d2e;
+}
+
+.ass-modal-results .is-warning {
+	color: #996800;
+}
+
+@media screen and (max-width: 782px) {
+	.ass-pickup-orders .tablenav.top {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin: 12px 0;
+	}
+
+	.ass-pickup-orders .tablenav.top .actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		float: none;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		overflow: visible;
+	}
+
+	.ass-pickup-orders .tablenav.top .ass-pickup-filters {
+		order: 1;
+	}
+
+	.ass-pickup-orders .tablenav.top .bulkactions {
+		order: 2;
+	}
+
+	.ass-pickup-orders .tablenav.top .tablenav-pages {
+		order: 3;
+	}
+
+	.ass-pickup-orders .tablenav.top br.clear {
+		display: none;
+	}
+
+	.ass-pickup-orders .tablenav.top .actions select {
+		flex: 1 1 100%;
+		float: none;
+		width: 100%;
+		max-width: none;
+		margin: 0;
+	}
+
+	.ass-pickup-orders .tablenav.top .bulkactions select {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.ass-pickup-orders .tablenav.top .actions .button {
+		margin: 0;
+	}
+
+	.ass-pickup-orders .tablenav.top .ass-pickup-filters .select2-container {
+		flex: 1 1 100%;
+		width: 100% !important;
+		max-width: none;
+	}
+
+	.ass-pickup-orders .tablenav.top .ass-pickup-filters .select2-container .select2-selection--multiple {
+		min-height: 40px;
+	}
+
+	.ass-pickup-orders .tablenav.top .ass-pickup-filters #ass-pickup-filter-submit {
+		flex: 1 1 auto;
+	}
+
+	.ass-pickup-orders .ass-pickup-clear {
+		line-height: 40px;
+		margin-left: 8px;
+	}
+
+	.ass-pickup-orders .wp-list-table,
+	.ass-pickup-orders .wp-list-table tbody,
+	.ass-pickup-orders .wp-list-table thead,
+	.ass-pickup-orders .wp-list-table tfoot {
+		display: block;
+	}
+
+	.ass-pickup-orders .wp-list-table thead tr,
+	.ass-pickup-orders .wp-list-table tfoot tr {
+		display: flex;
+		align-items: center;
+	}
+
+	.ass-pickup-orders .wp-list-table thead tr > *,
+	.ass-pickup-orders .wp-list-table tfoot tr > * {
+		border: 0;
+	}
+
+	.ass-pickup-orders .wp-list-table thead {
+		border-bottom: 1px solid #c3c4c7;
+	}
+
+	.ass-pickup-orders .wp-list-table tfoot {
+		border-top: 1px solid #c3c4c7;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		column-gap: 16px;
+		padding: 12px 12px 4px 46px;
+		border-top: 1px solid #c3c4c7;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items):first-child {
+		border-top: 0;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) th.check-column {
+		position: absolute;
+		top: 12px;
+		left: 6px;
+		display: block;
+		width: auto;
+		padding: 0;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td:not(.check-column) {
+		display: block !important;
+		grid-column: 1 / -1;
+		width: auto !important;
+		min-width: 0;
+		padding: 0 0 10px !important;
+		border: 0;
+		box-shadow: none;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td:not(.column-primary)::before {
+		position: static;
+		display: block;
+		width: auto;
+		margin: 0 0 2px;
+		color: #646970;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		line-height: 1.4;
+		text-transform: uppercase;
+		white-space: normal;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-order {
+		display: flex !important;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px 10px;
+		grid-row: 1;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-order .row-title strong {
+		font-size: 16px;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-order .ass-pickup-order-status {
+		margin: 0;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-order .row-actions {
+		flex: 1 1 100%;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-pickup {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-pickup_sms {
+		grid-column: 2;
+		grid-row: 2;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-shipping {
+		grid-row: 3;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-products {
+		grid-row: 4;
+	}
+
+	.ass-pickup-orders .wp-list-table tbody tr:not(.no-items) td.column-customer {
+		grid-row: 5;
+	}
+
+	.ass-pickup-orders .wp-list-table .toggle-row {
+		display: none !important;
+	}
+
+	.ass-pickup-orders .wp-list-table .row-actions {
+		position: static;
+		left: auto;
+		margin: 0;
+		padding-top: 2px;
+	}
+
+	.ass-pickup-orders .wp-list-table .row-actions span a {
+		padding: 6px 16px 6px 0;
+		font-size: 14px;
+	}
+
+	.ass-pickup-orders .ass-pickup-method-logo {
+		flex: 0 0 auto;
+		width: auto;
+	}
+
+	.ass-pickup-orders .ass-pickup-method-logo:empty {
+		display: none;
+	}
+
+	.ass-pickup-orders .ass-pickup-phone,
+	.ass-pickup-orders .ass-pickup-email {
+		display: inline-block;
+		padding: 2px 0;
+		font-size: 14px;
+	}
+
+	.ass-pickup-orders .ass-pickup-code {
+		font-size: 20px;
+	}
+
+	.ass-modal-backdrop {
+		padding: 8px;
+	}
+
+	.ass-sms-columns {
+		flex-direction: column;
+	}
+
+	.ass-sms-preview {
+		flex-basis: auto;
+		width: 100%;
+	}
+}
