@@ -11,6 +11,7 @@ class Pickup_Helper {
 	const META_TIME       = 'pickup_time';
 	const META_RULE_TYPE  = '_ass_rule_type';
 	const META_READY_AT   = '_ass_pickup_ready_at';
+	const META_PICKED_UP_BY = '_ass_picked_up_by';
 
 	public static function default_text( string $english, string $lithuanian ): string {
 		return 0 === strpos( (string) get_locale(), 'lt' ) ? $lithuanian : $english;

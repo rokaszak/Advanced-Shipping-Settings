@@ -27,9 +27,52 @@
 }
 
 .ass-pickup-orders .ass-pickup-filters .select2-container {
-	width: 420px !important;
+	width: 300px !important;
 	max-width: 100%;
 	margin: 0;
+}
+
+.ass-pickup-orders .ass-pickup-views {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 0;
+	margin: 8px 0 4px;
+	color: #646970;
+	font-size: 13px;
+	line-height: 2;
+}
+
+.ass-pickup-orders .ass-pickup-view-group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 8px;
+}
+
+.ass-pickup-orders .ass-pickup-view-group + .ass-pickup-view-group {
+	margin-left: 16px;
+	padding-left: 16px;
+	border-left: 1px solid #c3c4c7;
+}
+
+.ass-pickup-orders .ass-pickup-view-group-name {
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.ass-pickup-orders .ass-pickup-view-links a {
+	text-decoration: none;
+}
+
+.ass-pickup-orders .ass-pickup-view-links a.current {
+	color: #000;
+	font-weight: 600;
+}
+
+.ass-pickup-orders .ass-pickup-view-links .count {
+	color: #50575e;
+	font-weight: 400;
 }
 
 .ass-pickup-orders .ass-pickup-filters .select2-container .select2-selection--multiple {

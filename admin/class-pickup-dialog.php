@@ -203,6 +203,9 @@ class Pickup_Dialog {
 			return '';
 		}
 		if ( 'ready' === $mode ) {
+			if ( ! Pickup_Helper::uses_own_pickup( $order ) ) {
+				return __( 'not one of your pickup locations', 'advanced-shipping-settings' );
+			}
 			if ( Pickup_Helper::can_become_ready( $order ) ) {
 				return '';
 			}
@@ -211,7 +214,8 @@ class Pickup_Dialog {
 			}
 			return sprintf( __( 'status is "%s"', 'advanced-shipping-settings' ), Pickup_Helper::status_label( $status ) );
 		}
-		if ( Pickup_Helper::STATUS_READY === $status ) {
+		$dispatched = 'sms' === $mode && 'completed' === $status && ! Pickup_Helper::uses_own_pickup( $order );
+		if ( Pickup_Helper::STATUS_READY === $status || $dispatched ) {
 			if ( 'sms' === $mode && ! $allow_resend && Pickup_Sms::STATUS_SENT === Pickup_Sms::get_status( $order ) ) {
 				return __( 'SMS already sent. Use "Resend SMS" on the order to send it again.', 'advanced-shipping-settings' );
 			}

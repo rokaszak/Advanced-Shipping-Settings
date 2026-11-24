@@ -69,29 +69,42 @@ class Pickup_Pdf extends \ASS\Lib\tFPDF {
 			}
 		}
 
-		if ( '' !== $filters['method'] ) {
-			$label = Pickup_Helper::method_display_name( (string) $filters['method'], '' );
+		$method = (string) $filters['method'];
+		if ( '' === $method && Pickup_Orders_Page::GROUP_OWN !== ( $filters['group'] ?? Pickup_Orders_Page::GROUP_OWN ) ) {
+			$method = (string) $filters['group'];
+		}
+
+		if ( '' !== $method ) {
+			$label = Pickup_Helper::method_display_name( $method, '' );
 			foreach ( $rows as $row ) {
 				if ( '' !== $label ) {
 					break;
 				}
-				if ( $row['method_id'] === $filters['method'] ) {
+				if ( $row['method_id'] === $method ) {
 					$label = (string) $row['method_label'];
 				}
 			}
-			$lines[] = [ 'Pristatymo būdas:', '' !== $label ? $label : (string) $filters['method'] ];
+			$lines[] = [ 'Pristatymo būdas:', '' !== $label ? $label : $method ];
 		}
 
 		if ( $filters['cats'] ) {
-			$names = [];
-			foreach ( $filters['cats'] as $term_id ) {
-				$term    = get_term( (int) $term_id, 'product_cat' );
-				$names[] = $term && ! is_wp_error( $term ) ? (string) $term->name : '#' . $term_id;
-			}
-			$lines[] = [ 'Užsakyme turi būti:', implode( ', ', $names ) ];
+			$lines[] = [ 'Užsakyme turi būti:', self::category_names( $filters['cats'] ) ];
+		}
+
+		if ( ! empty( $filters['xcats'] ) ) {
+			$lines[] = [ 'Užsakyme neturi būti:', self::category_names( $filters['xcats'] ) ];
 		}
 
 		return $lines;
+	}
+
+	private static function category_names( array $term_ids ): string {
+		$names = [];
+		foreach ( $term_ids as $term_id ) {
+			$term    = get_term( (int) $term_id, 'product_cat' );
+			$names[] = $term && ! is_wp_error( $term ) ? (string) $term->name : '#' . $term_id;
+		}
+		return implode( ', ', $names );
 	}
 
 	private static function url_to_path( string $url ): string {

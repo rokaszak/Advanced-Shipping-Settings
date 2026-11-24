@@ -10,14 +10,17 @@ class Pickup_Orders_Page {
 	const SLUG            = 'ass-pickup-orders';
 	const CAPABILITY      = 'manage_options';
 	const NO_DATE         = 'none';
+	const GROUP_OWN       = 'own';
+	const NONCE_ACTION    = 'bulk-pickup-orders';
 	const EXPORT_ACTION   = 'ass_pickup_export_pdf';
 	const COUNT_TRANSIENT = 'ass_pickup_pending_count';
 	const MAX_ROWS        = 1000;
 
 	private static $instance = null;
 
-	private $hook = '';
-	private $rows = null;
+	private $hook   = '';
+	private $rows   = null;
+	private $groups = null;
 
 	public static function instance(): self {
 		if ( null === self::$instance ) {
@@ -48,7 +51,7 @@ class Pickup_Orders_Page {
 
 		$count = 0;
 		foreach ( $this->collect_rows() as $row ) {
-			if ( Pickup_Helper::STATUS_READY !== $row['status'] ) {
+			if ( 'pending' === $row['view'] ) {
 				$count++;
 			}
 		}
@@ -131,6 +134,11 @@ class Pickup_Orders_Page {
 	}
 
 	public function on_load(): void {
+		$action = $this->requested_action();
+		if ( 0 === strpos( $action, 'multiparcels_' ) ) {
+			$this->run_external_action( $action );
+		}
+
 		$noise = [ '_wp_http_referer', '_wpnonce', 'action', 'action2', 'filter_action', 'order_ids' ];
 		foreach ( $noise as $key ) {
 			if ( isset( $_GET[ $key ] ) ) {
@@ -147,8 +155,106 @@ class Pickup_Orders_Page {
 		return add_query_arg( array_merge( [ 'page' => self::SLUG ], $args ), admin_url( 'admin.php' ) );
 	}
 
-	public static function view_args( string $view ): array {
-		return 'pending' === $view ? [] : [ 'pickup_view' => $view ];
+	public static function view_args( string $group, string $view ): array {
+		$args = [];
+		if ( self::GROUP_OWN !== $group ) {
+			$args['pickup_group'] = $group;
+		}
+		if ( 'pending' !== $view ) {
+			$args['pickup_view'] = $view;
+		}
+		return $args;
+	}
+
+	public static function group_views( string $group ): array {
+		return self::GROUP_OWN === $group ? [ 'pending', 'ready' ] : [ 'pending', 'nosms' ];
+	}
+
+	private static function orders_screen_id(): string {
+		$hpos = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' ) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+		return $hpos ? 'woocommerce_page_wc-orders' : 'edit-shop_order';
+	}
+
+	public static function external_actions(): array {
+		$actions = [];
+		foreach ( (array) apply_filters( 'bulk_actions-' . self::orders_screen_id(), [] ) as $key => $label ) {
+			if ( is_string( $key ) && 0 === strpos( $key, 'multiparcels_' ) && is_scalar( $label ) ) {
+				$actions[ $key ] = (string) $label;
+			}
+		}
+		return $actions;
+	}
+
+	private function requested_action(): string {
+		foreach ( [ 'action', 'action2' ] as $key ) {
+			$value = isset( $_GET[ $key ] ) && is_scalar( $_GET[ $key ] ) ? sanitize_key( wp_unslash( $_GET[ $key ] ) ) : '';
+			if ( '' !== $value && '-1' !== $value ) {
+				return $value;
+			}
+		}
+		return '';
+	}
+
+	private function run_external_action( string $action ): void {
+		check_admin_referer( self::NONCE_ACTION );
+		if ( ! current_user_can( 'edit_shop_orders' ) ) {
+			wp_die( esc_html__( 'You are not allowed to do this.', 'advanced-shipping-settings' ) );
+		}
+
+		$filters = $this->read_filters( wp_unslash( $_GET ) );
+		$back    = self::url( self::view_args( $filters['group'], $filters['view'] ) );
+		$ids     = isset( $_GET['order_ids'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) wp_unslash( $_GET['order_ids'] ) ) ) ) ) : [];
+
+		if ( ! $ids || ! isset( self::external_actions()[ $action ] ) ) {
+			wp_safe_redirect( $back );
+			exit;
+		}
+
+		$target = apply_filters( 'handle_bulk_actions-' . self::orders_screen_id(), $back, $action, $ids );
+		wp_safe_redirect( is_string( $target ) && '' !== $target ? $target : $back );
+		exit;
+	}
+
+	public function groups(): array {
+		if ( null !== $this->groups ) {
+			return $this->groups;
+		}
+
+		$own    = Pickup_Helper::own_locations();
+		$today  = wp_date( 'Y-m-d' );
+		$others = [];
+
+		foreach ( (array) Settings_Manager::instance()->get_shipping_rules() as $method_id => $rule ) {
+			$method_id = (string) $method_id;
+			if ( '' === $method_id || ! is_array( $rule ) || 'by_date' !== ( $rule['type'] ?? '' ) || isset( $own[ $method_id ] ) ) {
+				continue;
+			}
+			foreach ( (array) ( $rule['dates'] ?? [] ) as $date_info ) {
+				if ( is_array( $date_info ) && (string) ( $date_info['date'] ?? '' ) >= $today ) {
+					$others[ $method_id ] = '';
+					break;
+				}
+			}
+		}
+
+		foreach ( $this->collect_rows() as $row ) {
+			if ( self::GROUP_OWN !== $row['group'] && '' === ( $others[ $row['group'] ] ?? '' ) ) {
+				$others[ $row['group'] ] = (string) $row['method_label'];
+			}
+		}
+
+		$this->groups = [ self::GROUP_OWN => __( 'Cafes', 'advanced-shipping-settings' ) ];
+		foreach ( $others as $method_id => $label ) {
+			$this->groups[ $method_id ] = '' !== $label ? $label : Pickup_Helper::method_display_name( $method_id, self::method_title( $method_id ) );
+		}
+
+		return $this->groups;
+	}
+
+	private static function method_title( string $method_id ): string {
+		$methods = function_exists( 'WC' ) && WC()->shipping() ? WC()->shipping()->get_shipping_methods() : [];
+		$method  = $methods[ $method_id ] ?? null;
+		return is_object( $method ) && method_exists( $method, 'get_method_title' ) ? (string) $method->get_method_title() : $method_id;
 	}
 
 	private function collect_rows(): array {
@@ -166,7 +272,24 @@ class Pickup_Orders_Page {
 			]
 		);
 
-		$this->rows = self::sort_rows( $this->build_rows( is_array( $orders ) ? $orders : [] ) );
+		$completed = wc_get_orders(
+			[
+				'type'       => 'shop_order',
+				'status'     => [ 'completed' ],
+				'limit'      => -1,
+				'orderby'    => 'ID',
+				'order'      => 'ASC',
+				'meta_query' => [
+					[
+						'key'     => 'deliver_by_date',
+						'value'   => wp_date( 'Y-m-d' ),
+						'compare' => '>=',
+					],
+				],
+			]
+		);
+
+		$this->rows = self::sort_rows( $this->build_rows( array_merge( is_array( $orders ) ? $orders : [], is_array( $completed ) ? $completed : [] ) ) );
 
 		return $this->rows;
 	}
@@ -283,11 +406,24 @@ class Pickup_Orders_Page {
 			}
 		}
 
+		$own_locations = Pickup_Helper::own_locations();
+
 		$rows = [];
 		foreach ( $by_id as $order_id => $order ) {
 			$method_id = $shipping[ $order_id ]['method_id'] ?? '';
 			if ( ! Pickup_Helper::is_reservation_order( $order, $method_id ) ) {
 				continue;
+			}
+
+			$is_own = '' === $method_id || isset( $own_locations[ $method_id ] );
+			$status = $order->get_status();
+			if ( 'completed' === $status ) {
+				if ( $is_own || Pickup_Sms::STATUS_SENT === Pickup_Sms::get_status( $order ) ) {
+					continue;
+				}
+				$view = 'nosms';
+			} else {
+				$view = $is_own && Pickup_Helper::STATUS_READY === $status ? 'ready' : 'pending';
 			}
 
 			$order_categories = [];
@@ -300,7 +436,9 @@ class Pickup_Orders_Page {
 			$rows[] = [
 				'order'        => $order,
 				'id'           => $order_id,
-				'status'       => $order->get_status(),
+				'status'       => $status,
+				'group'        => $is_own ? self::GROUP_OWN : $method_id,
+				'view'         => $view,
 				'date'         => Pickup_Helper::get_pickup_date( $order ),
 				'method_id'    => $method_id,
 				'method_label' => Pickup_Helper::method_display_name( $method_id, $shipping[ $order_id ]['name'] ?? '' ),
@@ -313,44 +451,48 @@ class Pickup_Orders_Page {
 	}
 
 	private function read_filters( array $source ): array {
+		$group  = isset( $source['pickup_group'] ) && is_scalar( $source['pickup_group'] ) ? sanitize_text_field( $source['pickup_group'] ) : '';
+		$group  = '' !== $group ? $group : self::GROUP_OWN;
 		$view   = isset( $source['pickup_view'] ) && is_scalar( $source['pickup_view'] ) ? sanitize_key( $source['pickup_view'] ) : 'pending';
 		$date   = isset( $source['pickup_date'] ) && is_scalar( $source['pickup_date'] ) ? sanitize_text_field( $source['pickup_date'] ) : '';
 		$method = isset( $source['pickup_method'] ) && is_scalar( $source['pickup_method'] ) ? sanitize_text_field( $source['pickup_method'] ) : '';
 		$cats   = isset( $source['pickup_cats'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $source['pickup_cats'] ) ) ) ) : [];
+		$xcats  = isset( $source['pickup_xcats'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $source['pickup_xcats'] ) ) ) ) : [];
 
 		return [
-			'view'   => in_array( $view, [ 'all', 'pending', 'ready' ], true ) ? $view : 'pending',
+			'group'  => $group,
+			'view'   => in_array( $view, self::group_views( $group ), true ) ? $view : 'pending',
 			'date'   => self::NO_DATE === $date || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? $date : '',
-			'method' => $method,
+			'method' => self::GROUP_OWN === $group ? $method : '',
 			'cats'   => $cats,
+			'xcats'  => array_values( array_diff( $xcats, $cats ) ),
 		];
 	}
 
 	public function current_filters(): array {
-		return $this->read_filters( wp_unslash( $_GET ) );
+		$filters = $this->read_filters( wp_unslash( $_GET ) );
+		if ( ! isset( $this->groups()[ $filters['group'] ] ) ) {
+			$filters['group']  = self::GROUP_OWN;
+			$filters['view']   = 'pending';
+			$filters['method'] = '';
+		}
+		return $filters;
 	}
 
 	private function build_view( array $rows, array $filters ): array {
-		$counts = [
-			'all'     => count( $rows ),
-			'pending' => 0,
-			'ready'   => 0,
-		];
+		$counts = [];
 		foreach ( $rows as $row ) {
-			$counts[ Pickup_Helper::STATUS_READY === $row['status'] ? 'ready' : 'pending' ]++;
+			$counts[ $row['group'] ][ $row['view'] ] = ( $counts[ $row['group'] ][ $row['view'] ] ?? 0 ) + 1;
 		}
 
-		if ( 'all' !== $filters['view'] ) {
-			$rows = array_values(
-				array_filter(
-					$rows,
-					static function ( array $row ) use ( $filters ): bool {
-						$is_ready = Pickup_Helper::STATUS_READY === $row['status'];
-						return 'ready' === $filters['view'] ? $is_ready : ! $is_ready;
-					}
-				)
-			);
-		}
+		$rows = array_values(
+			array_filter(
+				$rows,
+				static function ( array $row ) use ( $filters ): bool {
+					return $row['group'] === $filters['group'] && $row['view'] === $filters['view'];
+				}
+			)
+		);
 
 		$facet_rows = $rows;
 
@@ -413,7 +555,7 @@ class Pickup_Orders_Page {
 				$categories[ $term_id ]['count']++;
 			}
 		}
-		foreach ( $filters['cats'] as $term_id ) {
+		foreach ( array_merge( $filters['cats'], $filters['xcats'] ) as $term_id ) {
 			if ( ! isset( $categories[ $term_id ] ) ) {
 				$term                   = get_term( $term_id, 'product_cat' );
 				$categories[ $term_id ] = [
@@ -432,6 +574,16 @@ class Pickup_Orders_Page {
 				)
 			);
 		}
+		if ( $filters['xcats'] ) {
+			$rows = array_values(
+				array_filter(
+					$rows,
+					static function ( array $row ) use ( $filters ): bool {
+						return ! array_intersect( $filters['xcats'], array_keys( $row['categories'] ) );
+					}
+				)
+			);
+		}
 		uasort(
 			$categories,
 			static function ( array $a, array $b ): int {
@@ -443,6 +595,7 @@ class Pickup_Orders_Page {
 			'rows'       => $rows,
 			'facet_rows' => $facet_rows,
 			'counts'     => $counts,
+			'groups'     => $this->groups(),
 			'dates'      => $dates,
 			'methods'    => $methods,
 			'categories' => $categories,
@@ -562,7 +715,11 @@ class Pickup_Orders_Page {
 		$table   = new Pickup_Orders_Table( $view, $filters );
 		$table->prepare_items();
 
-		set_transient( self::COUNT_TRANSIENT, (int) $view['counts']['pending'], 10 * MINUTE_IN_SECONDS );
+		$pending = 0;
+		foreach ( $view['counts'] as $group_counts ) {
+			$pending += (int) ( $group_counts['pending'] ?? 0 );
+		}
+		set_transient( self::COUNT_TRANSIENT, $pending, 10 * MINUTE_IN_SECONDS );
 		?>
 		<div class="wrap ass-pickup-orders">
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Pickup Orders', 'advanced-shipping-settings' ); ?></h1>
@@ -578,9 +735,9 @@ class Pickup_Orders_Page {
 			<?php $table->views(); ?>
 			<form method="get" id="ass-pickup-orders-form">
 				<input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>">
-				<?php if ( 'pending' !== $filters['view'] ) : ?>
-					<input type="hidden" name="pickup_view" value="<?php echo esc_attr( $filters['view'] ); ?>">
-				<?php endif; ?>
+				<?php foreach ( self::view_args( $filters['group'], $filters['view'] ) as $name => $value ) : ?>
+					<input type="hidden" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>">
+				<?php endforeach; ?>
 				<?php $table->display(); ?>
 			</form>
 		</div>

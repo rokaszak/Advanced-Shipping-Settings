@@ -44,13 +44,19 @@ class Pickup_Orders_Table extends \WP_List_Table {
 	}
 
 	protected function get_bulk_actions() {
-		return [
-			'ass_mark_ready'     => __( 'Change status to ready for pickup', 'advanced-shipping-settings' ),
-			'ass_mark_completed' => __( 'Change status to completed', 'advanced-shipping-settings' ),
-			'ass_send_sms'       => __( 'Send SMS', 'advanced-shipping-settings' ),
-			'ass_export_pdf'     => __( 'Export / print orders PDF', 'advanced-shipping-settings' ),
+		$ready     = [ 'ass_mark_ready' => __( 'Change status to ready for pickup', 'advanced-shipping-settings' ) ];
+		$completed = [ 'ass_mark_completed' => __( 'Change status to completed', 'advanced-shipping-settings' ) ];
+		$sms       = [ 'ass_send_sms' => __( 'Send SMS', 'advanced-shipping-settings' ) ];
+		$exports   = [
+			'ass_export_pdf'          => __( 'Export / print orders PDF', 'advanced-shipping-settings' ),
 			'ass_export_products_pdf' => __( 'Export / print products PDF', 'advanced-shipping-settings' ),
 		];
+
+		if ( Pickup_Orders_Page::GROUP_OWN === $this->filters['group'] ) {
+			return 'ready' === $this->filters['view'] ? $completed + $sms + $exports : $ready + $completed + $sms + $exports;
+		}
+
+		return 'nosms' === $this->filters['view'] ? $sms : Pickup_Orders_Page::external_actions() + $exports;
 	}
 
 	public function prepare_items() {
@@ -125,24 +131,33 @@ class Pickup_Orders_Table extends \WP_List_Table {
 		return $url;
 	}
 
-	protected function get_views() {
+	public function views() {
 		$labels = [
 			'pending' => __( 'To prepare', 'advanced-shipping-settings' ),
 			'ready'   => __( 'Ready for pickup', 'advanced-shipping-settings' ),
-			'all'     => __( 'All', 'advanced-shipping-settings' ),
+			'nosms'   => __( 'Completed without SMS', 'advanced-shipping-settings' ),
 		];
 
-		$views = [];
-		foreach ( $labels as $key => $label ) {
-			$views[ $key ] = sprintf(
-				'<a href="%1$s"%2$s>%3$s <span class="count">(%4$s)</span></a>',
-				esc_url( Pickup_Orders_Page::url( Pickup_Orders_Page::view_args( $key ) ) ),
-				$this->filters['view'] === $key ? ' class="current" aria-current="page"' : '',
-				esc_html( $label ),
-				esc_html( number_format_i18n( $this->view['counts'][ $key ] ) )
+		echo '<div class="ass-pickup-views">';
+		foreach ( $this->view['groups'] as $group => $name ) {
+			$links = [];
+			foreach ( Pickup_Orders_Page::group_views( (string) $group ) as $key ) {
+				$current = $this->filters['group'] === (string) $group && $this->filters['view'] === $key;
+				$links[] = sprintf(
+					'<a href="%1$s"%2$s>%3$s <span class="count">(%4$s)</span></a>',
+					esc_url( Pickup_Orders_Page::url( Pickup_Orders_Page::view_args( (string) $group, $key ) ) ),
+					$current ? ' class="current" aria-current="page"' : '',
+					esc_html( $labels[ $key ] ),
+					esc_html( number_format_i18n( (int) ( $this->view['counts'][ $group ][ $key ] ?? 0 ) ) )
+				);
+			}
+			printf(
+				'<div class="ass-pickup-view-group"><span class="ass-pickup-view-group-name">%1$s</span><span class="ass-pickup-view-links">%2$s</span></div>',
+				esc_html( (string) $name ),
+				implode( ' | ', $links )
 			);
 		}
-		return $views;
+		echo '</div>';
 	}
 
 	public function no_items() {
@@ -168,31 +183,43 @@ class Pickup_Orders_Table extends \WP_List_Table {
 				<?php endforeach; ?>
 			</select>
 
-			<label class="screen-reader-text" for="ass-pickup-method"><?php esc_html_e( 'Filter by shipping method', 'advanced-shipping-settings' ); ?></label>
-			<select name="pickup_method" id="ass-pickup-method">
-				<option value=""><?php esc_html_e( 'All shipping methods', 'advanced-shipping-settings' ); ?></option>
-				<?php foreach ( $this->view['methods'] as $method_id => $method ) : ?>
-					<option value="<?php echo esc_attr( $method_id ); ?>" <?php selected( $this->filters['method'], (string) $method_id ); ?>>
-						<?php echo esc_html( sprintf( '%1$s (%2$s)', '' !== $method['label'] ? $method['label'] : __( 'No shipping method', 'advanced-shipping-settings' ), number_format_i18n( $method['count'] ) ) ); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
+			<?php if ( Pickup_Orders_Page::GROUP_OWN === $this->filters['group'] ) : ?>
+				<label class="screen-reader-text" for="ass-pickup-method"><?php esc_html_e( 'Filter by shipping method', 'advanced-shipping-settings' ); ?></label>
+				<select name="pickup_method" id="ass-pickup-method">
+					<option value=""><?php esc_html_e( 'All shipping methods', 'advanced-shipping-settings' ); ?></option>
+					<?php foreach ( $this->view['methods'] as $method_id => $method ) : ?>
+						<option value="<?php echo esc_attr( $method_id ); ?>" <?php selected( $this->filters['method'], (string) $method_id ); ?>>
+							<?php echo esc_html( sprintf( '%1$s (%2$s)', '' !== $method['label'] ? $method['label'] : __( 'No shipping method', 'advanced-shipping-settings' ), number_format_i18n( $method['count'] ) ) ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			<?php endif; ?>
 
-			<label class="screen-reader-text" for="ass-pickup-cats"><?php esc_html_e( 'Filter by product categories', 'advanced-shipping-settings' ); ?></label>
-			<select name="pickup_cats[]" id="ass-pickup-cats" class="wc-enhanced-select ass-pickup-cats" multiple="multiple" style="width: 420px;" data-placeholder="<?php esc_attr_e( 'Contains products from…', 'advanced-shipping-settings' ); ?>">
-				<?php foreach ( $this->view['categories'] as $term_id => $category ) : ?>
-					<option value="<?php echo esc_attr( $term_id ); ?>" <?php selected( in_array( (int) $term_id, $this->filters['cats'], true ) ); ?>>
-						<?php echo esc_html( sprintf( '%1$s (%2$s)', $category['label'], number_format_i18n( $category['count'] ) ) ); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
+			<?php $this->category_select( 'pickup_cats', 'ass-pickup-cats', __( 'Contains products from…', 'advanced-shipping-settings' ), $this->filters['cats'], $this->filters['xcats'] ); ?>
+			<?php $this->category_select( 'pickup_xcats', 'ass-pickup-xcats', __( 'Does not contain products from…', 'advanced-shipping-settings' ), $this->filters['xcats'], $this->filters['cats'] ); ?>
 
 			<?php submit_button( __( 'Filter', 'advanced-shipping-settings' ), '', 'filter_action', false, [ 'id' => 'ass-pickup-filter-submit' ] ); ?>
-			<?php if ( '' !== $this->filters['date'] || '' !== $this->filters['method'] || $this->filters['cats'] ) : ?>
-				<a class="ass-pickup-clear" href="<?php echo esc_url( Pickup_Orders_Page::url( Pickup_Orders_Page::view_args( $this->filters['view'] ) ) ); ?>"><?php esc_html_e( 'Clear filters', 'advanced-shipping-settings' ); ?></a>
+			<?php if ( '' !== $this->filters['date'] || '' !== $this->filters['method'] || $this->filters['cats'] || $this->filters['xcats'] ) : ?>
+				<a class="ass-pickup-clear" href="<?php echo esc_url( Pickup_Orders_Page::url( Pickup_Orders_Page::view_args( $this->filters['group'], $this->filters['view'] ) ) ); ?>"><?php esc_html_e( 'Clear filters', 'advanced-shipping-settings' ); ?></a>
 			<?php endif; ?>
 			<script type="application/json" id="ass-pickup-facets"><?php echo wp_json_encode( $this->facet_data(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?></script>
 		</div>
+		<?php
+	}
+
+	private function category_select( string $name, string $id, string $placeholder, array $selected, array $blocked ): void {
+		?>
+		<label class="screen-reader-text" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $placeholder ); ?></label>
+		<select name="<?php echo esc_attr( $name ); ?>[]" id="<?php echo esc_attr( $id ); ?>" class="wc-enhanced-select ass-pickup-cats" multiple="multiple" data-placeholder="<?php echo esc_attr( $placeholder ); ?>">
+			<?php foreach ( $this->view['categories'] as $term_id => $category ) : ?>
+				<?php if ( in_array( (int) $term_id, $blocked, true ) ) : ?>
+					<?php continue; ?>
+				<?php endif; ?>
+				<option value="<?php echo esc_attr( $term_id ); ?>" <?php selected( in_array( (int) $term_id, $selected, true ) ); ?>>
+					<?php echo esc_html( sprintf( '%1$s (%2$s)', $category['label'], number_format_i18n( $category['count'] ) ) ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
 		<?php
 	}
 
@@ -239,7 +266,7 @@ class Pickup_Orders_Table extends \WP_List_Table {
 		$order   = $item['order'];
 		$actions = [];
 
-		if ( Pickup_Helper::can_become_ready( $order ) ) {
+		if ( Pickup_Orders_Page::GROUP_OWN === $item['group'] && Pickup_Helper::can_become_ready( $order ) ) {
 			$actions['ready'] = sprintf(
 				'<a href="#" class="ass-pickup-row-action" data-mode="ready" data-order-id="%1$d">%2$s</a>',
 				(int) $item['id'],
@@ -348,7 +375,7 @@ class Pickup_Orders_Table extends \WP_List_Table {
 	}
 
 	protected function column_pickup_sms( $item ) {
-		if ( Pickup_Helper::STATUS_READY !== $item['status'] ) {
+		if ( Pickup_Helper::STATUS_READY !== $item['status'] && 'nosms' !== $item['view'] ) {
 			return '&ndash;';
 		}
 

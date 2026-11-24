@@ -876,11 +876,15 @@
 		form.append('order_ids', ids.join(','));
 		form.append('kind', kind === 'products' ? 'products' : 'orders');
 		form.append('shown', String($('input[name="order_ids[]"]').length));
+		form.append('pickup_group', filters.group || '');
 		form.append('pickup_view', filters.view || '');
 		form.append('pickup_date', filters.date || '');
 		form.append('pickup_method', filters.method || '');
 		(filters.cats || []).forEach(function (id) {
 			form.append('pickup_cats[]', id);
+		});
+		(filters.xcats || []).forEach(function (id) {
+			form.append('pickup_xcats[]', id);
 		});
 
 		window.fetch(cfg.ajaxUrl, {
@@ -957,6 +961,27 @@
 		var $date = $('#ass-pickup-date');
 		var $method = $('#ass-pickup-method');
 		var $cats = $('#ass-pickup-cats');
+		var $xcats = $('#ass-pickup-xcats');
+		var counts = {};
+		var ids = [];
+
+		function values($select) {
+			return ($select.val() || []).map(String);
+		}
+
+		function fillCategories($select, $other) {
+			var selected = values($select);
+			var blocked = values($other);
+
+			$select.empty();
+			ids.forEach(function (id) {
+				if (blocked.indexOf(String(id)) !== -1) {
+					return;
+				}
+				$select.append($('<option>').val(id).text(data.cats[id] + ' (' + counts[id] + ')').prop('selected', selected.indexOf(String(id)) !== -1));
+			});
+			$select.trigger('change.select2');
+		}
 
 		function matching(date, method) {
 			return data.rows.filter(function (row) {
@@ -985,8 +1010,7 @@
 		}
 
 		function rebuildCategories() {
-			var selected = ($cats.val() || []).map(String);
-			var counts = {};
+			counts = {};
 
 			matching($date.val() || '', $method.val() || '').forEach(function (row) {
 				row[2].forEach(function (id) {
@@ -994,15 +1018,19 @@
 				});
 			});
 
-			var ids = Object.keys(counts).sort(function (a, b) {
+			var kept = values($cats).concat(values($xcats));
+			kept.forEach(function (id) {
+				if (!Object.prototype.hasOwnProperty.call(counts, id) && Object.prototype.hasOwnProperty.call(data.cats, id)) {
+					counts[id] = 0;
+				}
+			});
+
+			ids = Object.keys(counts).sort(function (a, b) {
 				return String(data.cats[a]).localeCompare(String(data.cats[b]));
 			});
 
-			$cats.empty();
-			ids.forEach(function (id) {
-				$cats.append($('<option>').val(id).text(data.cats[id] + ' (' + counts[id] + ')').prop('selected', selected.indexOf(String(id)) !== -1));
-			});
-			$cats.trigger('change');
+			fillCategories($cats, $xcats);
+			fillCategories($xcats, $cats);
 		}
 
 		$date.on('change', function () {
@@ -1010,6 +1038,14 @@
 			rebuildCategories();
 		});
 		$method.on('change', rebuildCategories);
+		$cats.on('change', function () {
+			fillCategories($xcats, $cats);
+		});
+		$xcats.on('change', function () {
+			fillCategories($cats, $xcats);
+		});
+
+		rebuildCategories();
 	}
 
 	function initPickupPage() {
@@ -1020,6 +1056,14 @@
 			}
 			var action = selectedBulkAction(button);
 			var modes = { ass_mark_ready: 'ready', ass_mark_completed: 'complete', ass_send_sms: 'sms' };
+			if (action.indexOf('multiparcels_') === 0) {
+				if (checkedValues('input[name="order_ids[]"]').length === 0) {
+					event.preventDefault();
+					event.stopImmediatePropagation();
+					window.alert(t.noSelection);
+				}
+				return;
+			}
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			if (action === 'ass_export_pdf' || action === 'ass_export_products_pdf') {

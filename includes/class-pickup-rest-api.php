@@ -54,9 +54,19 @@ class Pickup_Rest_Api {
 				'args'                => array_merge(
 					$code_args,
 					[
-						'order_id' => [
+						'order_id'          => [
 							'required' => false,
 							'type'     => 'integer',
+						],
+						'completed_by'      => [
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'completed_by_name' => [
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
 						],
 					]
 				),
@@ -216,10 +226,18 @@ class Pickup_Rest_Api {
 			return new \WP_Error( 'ass_pickup_order_mismatch', __( 'The pickup code belongs to a different order.', 'advanced-shipping-settings' ), [ 'status' => 409 ] );
 		}
 
-		$user = wp_get_current_user();
-		$note = sprintf( __( 'Picked up with pickup code %1$s. Completed through the pickup API by %2$s.', 'advanced-shipping-settings' ), $code, $user && $user->exists() ? $user->user_login : '-' );
+		$user         = wp_get_current_user();
+		$completed_by = substr( trim( (string) $request['completed_by'] ), 0, 64 );
+		$staff_name   = substr( trim( (string) $request['completed_by_name'] ), 0, 200 );
+		$note         = sprintf( __( 'Picked up with pickup code %1$s. Completed through the pickup API by %2$s.', 'advanced-shipping-settings' ), $code, $user && $user->exists() ? $user->user_login : '-' );
+		if ( '' !== $staff_name ) {
+			$note .= ' ' . sprintf( __( 'Handed out by %s.', 'advanced-shipping-settings' ), $staff_name );
+		}
 
 		try {
+			if ( '' !== $completed_by ) {
+				$order->update_meta_data( Pickup_Helper::META_PICKED_UP_BY, $completed_by );
+			}
 			$order->update_status( 'completed', $note, true );
 		} catch ( \Throwable $error ) {
 			return new \WP_Error( 'ass_pickup_complete_failed', __( 'The order could not be completed.', 'advanced-shipping-settings' ), [ 'status' => 500 ] );
@@ -262,6 +280,7 @@ class Pickup_Rest_Api {
 			]
 		);
 
+		$own     = Pickup_Helper::own_locations();
 		$methods = [];
 		$picked  = [];
 
@@ -273,6 +292,9 @@ class Pickup_Rest_Api {
 			$method_id = Pickup_Helper::get_method_id( $order );
 			$reserved  = Pickup_Helper::get_pickup_date( $order );
 
+			if ( ! array_key_exists( $method_id, $own ) ) {
+				continue;
+			}
 			if ( '' === $reserved || ! Pickup_Helper::is_reservation_order( $order, $method_id ) ) {
 				continue;
 			}

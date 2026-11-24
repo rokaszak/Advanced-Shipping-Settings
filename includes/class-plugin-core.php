@@ -27,7 +27,7 @@ class Plugin_Core {
 
 	private function define_constants(): void {
 		if ( ! defined( 'ASS_VERSION' ) ) {
-			define( 'ASS_VERSION', '1.7.14' );
+			define( 'ASS_VERSION', '1.7.16' );
 		}	
 		if ( ! defined( 'ASS_PATH' ) ) {
 			define( 'ASS_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
