@@ -440,6 +440,7 @@ class Pickup_Orders_Page {
 				'group'        => $is_own ? self::GROUP_OWN : $method_id,
 				'view'         => $view,
 				'date'         => Pickup_Helper::get_pickup_date( $order ),
+				'point'        => Pickup_Helper::get_pickup_point( $order ),
 				'method_id'    => $method_id,
 				'method_label' => Pickup_Helper::method_display_name( $method_id, $shipping[ $order_id ]['name'] ?? '' ),
 				'categories'   => $order_categories,
@@ -458,12 +459,20 @@ class Pickup_Orders_Page {
 		$method = isset( $source['pickup_method'] ) && is_scalar( $source['pickup_method'] ) ? sanitize_text_field( $source['pickup_method'] ) : '';
 		$cats   = isset( $source['pickup_cats'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $source['pickup_cats'] ) ) ) ) : [];
 		$xcats  = isset( $source['pickup_xcats'] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) $source['pickup_xcats'] ) ) ) ) : [];
+		$points = [];
+		foreach ( isset( $source['pickup_points'] ) ? (array) $source['pickup_points'] : [] as $point ) {
+			$point = is_scalar( $point ) ? sanitize_text_field( (string) $point ) : '';
+			if ( '' !== $point ) {
+				$points[ $point ] = true;
+			}
+		}
 
 		return [
 			'group'  => $group,
 			'view'   => in_array( $view, self::group_views( $group ), true ) ? $view : 'pending',
 			'date'   => self::NO_DATE === $date || preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? $date : '',
 			'method' => self::GROUP_OWN === $group ? $method : '',
+			'points' => self::GROUP_OWN === $group ? [] : array_keys( $points ),
 			'cats'   => $cats,
 			'xcats'  => array_values( array_diff( $xcats, $cats ) ),
 		];
@@ -543,6 +552,29 @@ class Pickup_Orders_Page {
 			);
 		}
 
+		$points = [];
+		if ( self::GROUP_OWN !== $filters['group'] ) {
+			foreach ( $rows as $row ) {
+				$points[ $row['point'] ] = ( $points[ $row['point'] ] ?? 0 ) + 1;
+			}
+			foreach ( $filters['points'] as $point ) {
+				if ( ! isset( $points[ $point ] ) ) {
+					$points[ $point ] = 0;
+				}
+			}
+			uksort( $points, 'strcasecmp' );
+		}
+		if ( $filters['points'] ) {
+			$rows = array_values(
+				array_filter(
+					$rows,
+					static function ( array $row ) use ( $filters ): bool {
+						return in_array( $row['point'], $filters['points'], true );
+					}
+				)
+			);
+		}
+
 		$categories = [];
 		foreach ( $rows as $row ) {
 			foreach ( $row['categories'] as $term_id => $name ) {
@@ -598,6 +630,7 @@ class Pickup_Orders_Page {
 			'groups'     => $this->groups(),
 			'dates'      => $dates,
 			'methods'    => $methods,
+			'points'     => $points,
 			'categories' => $categories,
 		];
 	}

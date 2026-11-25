@@ -448,6 +448,7 @@
 		var longest = 0;
 		var hasEmpty = false;
 		var emptyVariables = {};
+		var missingArrival = [];
 		var unknown = [];
 		var used = [];
 
@@ -470,6 +471,13 @@
 			}
 			used.forEach(function (name) {
 				if (String(recipient.vars[name] === undefined ? '' : recipient.vars[name]) === '') {
+					if (name === 'arrival_time') {
+						var point = String(recipient.vars.pickup_point || ('#' + recipient.number));
+						if (missingArrival.indexOf(point) === -1) {
+							missingArrival.push(point);
+						}
+						return;
+					}
 					emptyVariables[name] = (emptyVariables[name] || 0) + 1;
 				}
 			});
@@ -505,6 +513,9 @@
 		unknown.forEach(function (token) {
 			editor.warnings.appendChild(el('p', 'ass-sms-warning is-error', format(t.unknownVariable, token)));
 		});
+		if (missingArrival.length > 0) {
+			editor.warnings.appendChild(el('p', 'ass-sms-warning is-error', format(t.arrivalMissing, missingArrival.join(', '))));
+		}
 		Object.keys(emptyVariables).forEach(function (name) {
 			editor.warnings.appendChild(el('p', 'ass-sms-warning', format(t.emptyVariable, '{' + name + '}', emptyVariables[name])));
 		});
@@ -880,6 +891,9 @@
 		form.append('pickup_view', filters.view || '');
 		form.append('pickup_date', filters.date || '');
 		form.append('pickup_method', filters.method || '');
+		(filters.points || []).forEach(function (point) {
+			form.append('pickup_points[]', point);
+		});
 		(filters.cats || []).forEach(function (id) {
 			form.append('pickup_cats[]', id);
 		});
@@ -962,6 +976,7 @@
 		var $method = $('#ass-pickup-method');
 		var $cats = $('#ass-pickup-cats');
 		var $xcats = $('#ass-pickup-xcats');
+		var $points = $('#ass-pickup-points');
 		var counts = {};
 		var ids = [];
 
@@ -983,10 +998,35 @@
 			$select.trigger('change.select2');
 		}
 
-		function matching(date, method) {
+		function matching(date, method, points) {
 			return data.rows.filter(function (row) {
-				return (date === '' || row[0] === date) && (method === '' || row[1] === method);
+				return (date === '' || row[0] === date) && (method === '' || row[1] === method) && (!points || points.length === 0 || points.indexOf(row[3]) !== -1);
 			});
+		}
+
+		function rebuildPoints() {
+			if (!$points.length) {
+				return;
+			}
+			var selected = values($points);
+			var pointCounts = {};
+
+			matching($date.val() || '', '').forEach(function (row) {
+				pointCounts[row[3]] = (pointCounts[row[3]] || 0) + 1;
+			});
+			selected.forEach(function (point) {
+				if (!Object.prototype.hasOwnProperty.call(pointCounts, point)) {
+					pointCounts[point] = 0;
+				}
+			});
+
+			$points.empty();
+			Object.keys(pointCounts).sort(function (a, b) {
+				return a.localeCompare(b);
+			}).forEach(function (point) {
+				$points.append($('<option>').val(point).text((point !== '' ? point : '–') + ' (' + pointCounts[point] + ')').prop('selected', selected.indexOf(point) !== -1));
+			});
+			$points.trigger('change.select2');
 		}
 
 		function rebuildMethods() {
@@ -1012,7 +1052,7 @@
 		function rebuildCategories() {
 			counts = {};
 
-			matching($date.val() || '', $method.val() || '').forEach(function (row) {
+			matching($date.val() || '', $method.val() || '', values($points)).forEach(function (row) {
 				row[2].forEach(function (id) {
 					counts[id] = (counts[id] || 0) + 1;
 				});
@@ -1035,8 +1075,10 @@
 
 		$date.on('change', function () {
 			rebuildMethods();
+			rebuildPoints();
 			rebuildCategories();
 		});
+		$points.on('change', rebuildCategories);
 		$method.on('change', rebuildCategories);
 		$cats.on('change', function () {
 			fillCategories($xcats, $cats);

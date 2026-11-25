@@ -87,6 +87,10 @@ class Pickup_Pdf extends \ASS\Lib\tFPDF {
 			$lines[] = [ 'Pristatymo būdas:', '' !== $label ? $label : $method ];
 		}
 
+		if ( ! empty( $filters['points'] ) ) {
+			$lines[] = [ 'Atsiėmimo vietos:', implode( ', ', $filters['points'] ) ];
+		}
+
 		if ( $filters['cats'] ) {
 			$lines[] = [ 'Užsakyme turi būti:', self::category_names( $filters['cats'] ) ];
 		}

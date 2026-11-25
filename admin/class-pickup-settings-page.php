@@ -25,6 +25,7 @@ class Pickup_Settings_Page {
 
 	private function __construct() {
 		add_action( 'wp_ajax_ass_pickup_test_sms', [ $this, 'ajax_test_sms' ] );
+		add_action( 'admin_init', [ Bus_Stations::class, 'fill_initial_times' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 	}
 
@@ -102,6 +103,12 @@ class Pickup_Settings_Page {
 		}
 
 		Pickup_Sms::save_settings( $settings );
+
+		$arrival_ids   = isset( $_POST['ass_arrival_ids'] ) && is_array( $_POST['ass_arrival_ids'] ) ? wp_unslash( $_POST['ass_arrival_ids'] ) : [];
+		$arrival_times = isset( $_POST['ass_arrival_times'] ) && is_array( $_POST['ass_arrival_times'] ) ? wp_unslash( $_POST['ass_arrival_times'] ) : [];
+		if ( $arrival_ids ) {
+			Bus_Stations::save_times( $arrival_ids, $arrival_times );
+		}
 		$this->notices[] = [ 'success', $removed ? __( 'The saved token was removed. You can enter a new one now.', 'advanced-shipping-settings' ) : __( 'Pickup & SMS settings saved.', 'advanced-shipping-settings' ) ];
 	}
 
@@ -116,6 +123,8 @@ class Pickup_Settings_Page {
 
 		$settings    = Pickup_Sms::get_settings();
 		$credentials = Pickup_Sms::credentials();
+		$stations    = Bus_Stations::enabled_stations();
+		$arrivals    = Bus_Stations::times();
 		$variables   = Pickup_Sms::variable_labels();
 		$api_base    = rest_url( Pickup_Rest_Api::REST_NAMESPACE );
 
@@ -214,6 +223,23 @@ class Pickup_Settings_Page {
 					</tr>
 				</table>
 				<p class="description"><?php esc_html_e( 'Accented letters are sent without accents (ė → e), so a message of up to 160 characters stays one SMS.', 'advanced-shipping-settings' ); ?></p>
+
+				<h2 class="title"><?php esc_html_e( 'Bus station arrival times', 'advanced-shipping-settings' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Used by {arrival_time}. Only the bus stations switched on in MultiParcels are listed. An SMS that uses {arrival_time} is not sent to a station without a time.', 'advanced-shipping-settings' ); ?></p>
+				<?php if ( ! $stations ) : ?>
+					<p><?php esc_html_e( 'No MultiParcels bus stations were found.', 'advanced-shipping-settings' ); ?></p>
+				<?php else : ?>
+					<div class="ass-arrival-grid">
+						<?php foreach ( $stations as $identifier => $station ) : ?>
+							<?php $field = 'ass-arrival-' . md5( (string) $identifier ); ?>
+							<div class="ass-arrival-item">
+								<label for="<?php echo esc_attr( $field ); ?>" title="<?php echo esc_attr( $station['label'] ); ?>"><?php echo esc_html( '' !== $station['name'] ? $station['name'] : $station['label'] ); ?></label>
+								<input type="hidden" name="ass_arrival_ids[]" value="<?php echo esc_attr( (string) $identifier ); ?>">
+								<input type="text" id="<?php echo esc_attr( $field ); ?>" name="ass_arrival_times[]" value="<?php echo esc_attr( $arrivals[ (string) $identifier ] ?? '' ); ?>" inputmode="numeric" maxlength="5" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" placeholder="13:00" title="HH:MM" autocomplete="off">
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
 
 				<p class="submit">
 					<input type="submit" name="ass_save_pickup_settings" class="button button-primary button-large" value="<?php esc_attr_e( 'Save Settings', 'advanced-shipping-settings' ); ?>">

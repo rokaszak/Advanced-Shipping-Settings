@@ -809,3 +809,34 @@ body.ass-modal-open {
 		width: 100%;
 	}
 }
+
+.ass-pickup-settings .ass-arrival-grid {
+	display: flex;
+	flex-direction: column;
+	max-width: 360px;
+	margin: 12px 0 0;
+}
+
+.ass-pickup-settings .ass-arrival-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 4px 8px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.ass-pickup-settings .ass-arrival-item label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ass-pickup-settings .ass-arrival-item input[type="text"] {
+	flex: 0 0 auto;
+	width: 72px;
+	min-height: 30px;
+	margin: 0;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+}

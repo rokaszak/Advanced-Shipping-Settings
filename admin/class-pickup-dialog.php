@@ -130,6 +130,7 @@ class Pickup_Dialog {
 				'emptyMessage'    => __( 'The message is empty.', 'advanced-shipping-settings' ),
 				'unknownVariable' => __( 'Unknown variable: %s', 'advanced-shipping-settings' ),
 				'emptyVariable'   => __( '%1$s is empty for %2$d recipient(s).', 'advanced-shipping-settings' ),
+				'arrivalMissing'  => __( '{arrival_time} is empty for %s. These SMS will not be sent.', 'advanced-shipping-settings' ),
 				'progress'        => __( 'Processing %1$d of %2$d…', 'advanced-shipping-settings' ),
 				'doneTitle'       => __( 'Done', 'advanced-shipping-settings' ),
 				'doneReady'       => __( 'Marked ready for pickup: %d', 'advanced-shipping-settings' ),

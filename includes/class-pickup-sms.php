@@ -143,6 +143,7 @@ class Pickup_Sms {
 			'city'            => __( 'City', 'advanced-shipping-settings' ),
 			'pickup_date'     => __( 'Pickup date', 'advanced-shipping-settings' ),
 			'pickup_time'     => __( 'Pickup time', 'advanced-shipping-settings' ),
+			'arrival_time'    => __( 'Arrival time', 'advanced-shipping-settings' ),
 			'site_title'      => __( 'Site title', 'advanced-shipping-settings' ),
 		];
 	}
@@ -158,6 +159,7 @@ class Pickup_Sms {
 			'city'            => Pickup_Helper::get_city( $order ),
 			'pickup_date'     => Pickup_Helper::get_pickup_date( $order ),
 			'pickup_time'     => Pickup_Helper::get_pickup_time( $order ),
+			'arrival_time'    => Bus_Stations::arrival_time( $order ),
 			'site_title'      => wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES ),
 		];
 	}
@@ -241,7 +243,17 @@ class Pickup_Sms {
 			$template = self::template_for( self::group_for( $order ) );
 		}
 
-		$text = Sms_Text::render( $template, self::variables( $order ) );
+		$variables = self::variables( $order );
+		if ( false !== strpos( $template, '{arrival_time}' ) && '' === $variables['arrival_time'] ) {
+			$error = __( 'No arrival time is set for this station.', 'advanced-shipping-settings' );
+			self::record( $order, self::STATUS_FAILED, [ 'number' => $phone['number'], 'error' => $error ] );
+			return [
+				'status' => self::STATUS_FAILED,
+				'error'  => $error,
+			];
+		}
+
+		$text = Sms_Text::render( $template, $variables );
 		if ( ! Sms_Text::is_sendable( $text ) ) {
 			$error = '' === $text
 				? __( 'The SMS text is empty.', 'advanced-shipping-settings' )

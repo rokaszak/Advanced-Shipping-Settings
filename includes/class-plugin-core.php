@@ -27,7 +27,7 @@ class Plugin_Core {
 
 	private function define_constants(): void {
 		if ( ! defined( 'ASS_VERSION' ) ) {
-			define( 'ASS_VERSION', '1.7.16' );
+			define( 'ASS_VERSION', '1.7.21' );
 		}	
 		if ( ! defined( 'ASS_PATH' ) ) {
 			define( 'ASS_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
@@ -50,6 +50,7 @@ class Plugin_Core {
 		require_once ASS_PATH . 'includes/class-pickup-shipping-method.php';
 		require_once ASS_PATH . 'includes/class-widget-handler.php';
 		require_once ASS_PATH . 'includes/class-pickup-helper.php';
+		require_once ASS_PATH . 'includes/class-bus-stations.php';
 		require_once ASS_PATH . 'includes/class-qr-encoder.php';
 		require_once ASS_PATH . 'includes/class-pickup-code.php';
 		require_once ASS_PATH . 'includes/class-sms-text.php';

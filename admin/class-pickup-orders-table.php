@@ -193,13 +193,22 @@ class Pickup_Orders_Table extends \WP_List_Table {
 						</option>
 					<?php endforeach; ?>
 				</select>
+			<?php else : ?>
+				<label class="screen-reader-text" for="ass-pickup-points"><?php esc_html_e( 'Pickup locations…', 'advanced-shipping-settings' ); ?></label>
+				<select name="pickup_points[]" id="ass-pickup-points" class="wc-enhanced-select ass-pickup-cats" multiple="multiple" data-placeholder="<?php esc_attr_e( 'Pickup locations…', 'advanced-shipping-settings' ); ?>">
+					<?php foreach ( $this->view['points'] as $point => $count ) : ?>
+						<option value="<?php echo esc_attr( (string) $point ); ?>" <?php selected( in_array( (string) $point, $this->filters['points'], true ) ); ?>>
+							<?php echo esc_html( sprintf( '%1$s (%2$s)', '' !== (string) $point ? (string) $point : __( 'No pickup location', 'advanced-shipping-settings' ), number_format_i18n( $count ) ) ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
 			<?php endif; ?>
 
 			<?php $this->category_select( 'pickup_cats', 'ass-pickup-cats', __( 'Contains products from…', 'advanced-shipping-settings' ), $this->filters['cats'], $this->filters['xcats'] ); ?>
 			<?php $this->category_select( 'pickup_xcats', 'ass-pickup-xcats', __( 'Does not contain products from…', 'advanced-shipping-settings' ), $this->filters['xcats'], $this->filters['cats'] ); ?>
 
 			<?php submit_button( __( 'Filter', 'advanced-shipping-settings' ), '', 'filter_action', false, [ 'id' => 'ass-pickup-filter-submit' ] ); ?>
-			<?php if ( '' !== $this->filters['date'] || '' !== $this->filters['method'] || $this->filters['cats'] || $this->filters['xcats'] ) : ?>
+			<?php if ( '' !== $this->filters['date'] || '' !== $this->filters['method'] || $this->filters['points'] || $this->filters['cats'] || $this->filters['xcats'] ) : ?>
 				<a class="ass-pickup-clear" href="<?php echo esc_url( Pickup_Orders_Page::url( Pickup_Orders_Page::view_args( $this->filters['group'], $this->filters['view'] ) ) ); ?>"><?php esc_html_e( 'Clear filters', 'advanced-shipping-settings' ); ?></a>
 			<?php endif; ?>
 			<script type="application/json" id="ass-pickup-facets"><?php echo wp_json_encode( $this->facet_data(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?></script>
@@ -231,7 +240,7 @@ class Pickup_Orders_Table extends \WP_List_Table {
 
 		foreach ( $this->view['facet_rows'] as $row ) {
 			$date   = '' === $row['date'] ? Pickup_Orders_Page::NO_DATE : $row['date'];
-			$rows[] = [ $date, (string) $row['method_id'], array_map( 'intval', array_keys( $row['categories'] ) ) ];
+			$rows[] = [ $date, (string) $row['method_id'], array_map( 'intval', array_keys( $row['categories'] ) ), (string) $row['point'] ];
 
 			$dates[ $date ]                        = Pickup_Orders_Page::NO_DATE === $date ? __( 'No date', 'advanced-shipping-settings' ) : $this->format_date( $date );
 			$methods[ (string) $row['method_id'] ] = '' !== $row['method_label'] ? $row['method_label'] : __( 'No shipping method', 'advanced-shipping-settings' );
